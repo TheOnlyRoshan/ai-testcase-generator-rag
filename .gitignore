@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+.venv/
+
+# Environment variables
+.env
+
+# Mac
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# HuggingFace cache
+.cache/
