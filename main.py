@@ -1,16 +1,19 @@
 import os
-
 from loaders.prd_file_loader import PRDFileLoader
 from rag.text_splitter import TextSplitter
 from rag.vector_store import VectorStore
 from agents.testcase_agent import TestCaseAgent
 
 
+# Hardcoded PRD file path
+PRD_PATH = "/Users/roshanpandey/Downloads/PRD_ SquadSweat (MVP).pdf"
+
+
 def main():
 
     print("\nAI Test Case Generator\n")
 
-    file_path = input("Enter PRD file path: ").strip()
+    file_path = PRD_PATH
 
     # Validate path
     if not os.path.exists(file_path):
@@ -51,6 +54,9 @@ def main():
         context = "\n".join(
             [doc.page_content for doc in relevant_docs]
         )
+
+        # Limit context size (prevents token overflow)
+        context = context[:8000]
 
         # Step 6 — Generate Test Cases
         print("Generating test cases using AI...\n")
