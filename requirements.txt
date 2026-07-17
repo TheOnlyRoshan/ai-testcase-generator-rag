@@ -1,0 +1,3 @@
+langchain-text-splitters
+pyyaml
+sentence-transformers
