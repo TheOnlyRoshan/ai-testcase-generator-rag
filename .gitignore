@@ -14,9 +14,13 @@ venv/
 # Mac
 .DS_Store
 
+*.egg-info/
+
 # IDE
 .idea/
 .vscode/
 
 # HuggingFace cache
 .cache/
+
+chroma_db/
