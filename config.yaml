@@ -1,0 +1,9 @@
+paths:
+  raw_docs_dir: "data/raw"
+
+chunking:
+  max_chunk_size: 500
+  overlap: 80
+
+embedding:
+  model_name: "all-MiniLM-L6-v2"

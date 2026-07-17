@@ -1,0 +1,53 @@
+"""
+config.py
+Loads pipeline settings from config.yaml so hyperparameters and paths live
+in one place and can be logged alongside any index/output for reproducibility.
+"""
+
+from dataclasses import dataclass
+from pathlib import Path
+
+import yaml
+
+# config.py lives in src/, so the project root is one level up. Resolving
+# this from __file__ (not the current working directory) means every path
+# below is correct no matter where the script is launched from -- a
+# terminal in the project root, PyCharm's default (script's own folder),
+# or a CI runner.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.yaml"
+
+
+@dataclass
+class PathsConfig:
+    raw_docs_dir: Path
+
+@dataclass
+class EmbeddingConfig:
+    model_name: str
+
+@dataclass
+class ChunkingConfig:
+    max_chunk_size: int
+    overlap: int
+
+
+@dataclass
+class Config:
+    paths: PathsConfig
+    chunking: ChunkingConfig
+    embedding: EmbeddingConfig
+
+def load_config(path: str | Path | None = None) -> Config:
+    config_path = Path(path) if path else DEFAULT_CONFIG_PATH
+    raw = yaml.safe_load(config_path.read_text())
+
+    # every relative path *inside* config.yaml is resolved against the
+    # project root too, not the caller's cwd, for the same reason as above
+    raw_docs_dir = PROJECT_ROOT / raw["paths"]["raw_docs_dir"]
+
+    return Config(
+        paths=PathsConfig(raw_docs_dir=raw_docs_dir),
+        chunking=ChunkingConfig(**raw["chunking"]),
+        embedding=EmbeddingConfig(**raw["embedding"]),
+    )
