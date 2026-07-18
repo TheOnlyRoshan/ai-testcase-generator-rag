@@ -1,0 +1,1245 @@
+{
+  "evaluated_at": "2026-07-18T20:37:38.896734+00:00",
+  "source_json": "test_cases_19-July-2026-01-13-32.json",
+  "overall_mean_faithfulness": 0.6029411764705882,
+  "total_test_cases": 51,
+  "features": [
+    {
+      "feature_name": "Upgrade flow",
+      "test_cases": [
+        {
+          "title": "Standard upgrade from Starter to Pro mid-cycle applies immediately with correct proration",
+          "expected_result": "New Pro plan takes effect immediately; customer is charged prorated_charge = (new_plan_price - old_plan_price) * (days_remaining_in_cycle / total_days_in_cycle); next full-price invoice remains scheduled at original billing date",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "New Pro plan takes effect immediately upon upgrade",
+              "supported": true,
+              "reasoning": "Source explicitly states 'When a customer upgrades (e.g. Starter -> Pro), the new plan takes effect immediately.'"
+            },
+            {
+              "claim": "Customer is charged prorated_charge = (new_plan_price - old_plan_price) * (days_remaining_in_cycle / total_days_in_cycle)",
+              "supported": true,
+              "reasoning": "This formula is given verbatim in the source context."
+            },
+            {
+              "claim": "Next full-price invoice remains scheduled at the original billing date",
+              "supported": true,
+              "reasoning": "Source states 'The customer's next full-price invoice occurs at the original billing date, unchanged.'"
+            }
+          ]
+        },
+        {
+          "title": "Upgrade from Pro to Business with successful payment logs plan change",
+          "expected_result": "Plan change is applied immediately, prorated charge succeeds, and the upgrade event is logged and visible in Billing history per NFR4",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "Plan change (upgrade) is applied immediately",
+              "supported": true,
+              "reasoning": "Source states 'the new plan takes effect immediately' for upgrades."
+            },
+            {
+              "claim": "Prorated charge succeeds (implying successful payment scenario)",
+              "supported": true,
+              "reasoning": "Source describes the prorated charge calculation and formula, implying a successful charge scenario is part of the normal upgrade flow."
+            },
+            {
+              "claim": "The upgrade event is logged",
+              "supported": true,
+              "reasoning": "Checklist item states 'All plan changes are logged per NFR4', which includes upgrades."
+            },
+            {
+              "claim": "The upgrade event is visible in Billing history per NFR4",
+              "supported": true,
+              "reasoning": "Checklist item explicitly states plan changes are logged per NFR4 and visible in Billing history."
+            }
+          ]
+        },
+        {
+          "title": "Upgrade at the very start of billing cycle results in near-maximum proration charge",
+          "expected_result": "Prorated charge approximately equals full price difference (new_plan_price - old_plan_price), since days_remaining_in_cycle is nearly equal to total_days_in_cycle",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "The prorated charge formula is (new_plan_price - old_plan_price) * (days_remaining_in_cycle / total_days_in_cycle)",
+              "supported": true,
+              "reasoning": "This formula is explicitly given verbatim in the source context."
+            },
+            {
+              "claim": "When days_remaining_in_cycle is nearly equal to total_days_in_cycle, the ratio days_remaining_in_cycle/total_days_in_cycle approaches 1",
+              "supported": true,
+              "reasoning": "This is a direct mathematical consequence of the given formula; if the two values are nearly equal, their ratio is nearly 1, which is a logical implication of the stated formula, not outside knowledge."
+            },
+            {
+              "claim": "Therefore the prorated charge approximately equals the full price difference (new_plan_price - old_plan_price) in this scenario",
+              "supported": true,
+              "reasoning": "Given the formula and the near-equality of days_remaining_in_cycle and total_days_in_cycle, the prorated charge approximately equals (new_plan_price - old_plan_price) * 1, which follows directly from the source's stated formula via basic arithmetic."
+            }
+          ]
+        },
+        {
+          "title": "Upgrade with fewer than 24 hours remaining in billing cycle calculates minimal proration",
+          "expected_result": "System correctly calculates a small but non-error prorated_charge using the fractional days_remaining_in_cycle value without failure or rounding errors",
+          "score": 0.0,
+          "claims": [
+            {
+              "claim": "System correctly calculates a small but non-error prorated_charge using a fractional days_remaining_in_cycle value",
+              "supported": false,
+              "reasoning": "The source mentions the edge case of fewer than 24 hours remaining (including zero) should calculate correctly, but does not specify 'fractional' days_remaining_in_cycle or confirm the actual calculated behavior/result, only that it 'should' work"
+            },
+            {
+              "claim": "The calculation occurs without failure",
+              "supported": false,
+              "reasoning": "Source only states an expectation/requirement that proration 'should still calculate correctly' for small values; it does not confirm actual test evidence of no failure occurring"
+            },
+            {
+              "claim": "The calculation occurs without rounding errors",
+              "supported": false,
+              "reasoning": "The source context does not mention rounding or rounding errors at all in relation to the proration formula or edge cases"
+            }
+          ]
+        },
+        {
+          "title": "Upgrade attempted with zero days remaining in billing cycle",
+          "expected_result": "Prorated charge is calculated as zero (or minimal) without division/calculation errors; new plan still takes effect immediately",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "Prorated charge is calculated as zero (or minimal) when days_remaining_in_cycle is very small or zero",
+              "supported": true,
+              "reasoning": "The context explicitly discusses the edge case of fewer than 24 hours remaining, including zero days_remaining_in_cycle, and states proration should still calculate correctly, implying the formula naturally yields zero/minimal charge in that case via the (days_remaining_in_cycle / total_days_in_cycle) factor."
+            },
+            {
+              "claim": "The proration calculation does not produce division/calculation errors even with very small or zero days_remaining_in_cycle",
+              "supported": true,
+              "reasoning": "The context explicitly states 'proration should still calculate correctly even for very small days_remaining_in_cycle values, including zero,' directly implying no calculation errors should occur."
+            },
+            {
+              "claim": "The new plan still takes effect immediately (in the upgrade scenario)",
+              "supported": true,
+              "reasoning": "The context explicitly states 'When a customer upgrades... the new plan takes effect immediately,' directly supporting this claim."
+            }
+          ]
+        },
+        {
+          "title": "Grandfathered-pricing customer sees irreversibility warning before upgrading",
+          "expected_result": "System displays an explicit irreversibility warning informing the customer that upgrading will forfeit their grandfathered pricing permanently, requiring explicit confirmation before proceeding",
+          "score": 0.3333333333333333,
+          "claims": [
+            {
+              "claim": "The system displays an explicit irreversibility warning to grandfathered-pricing customers upon upgrade",
+              "supported": true,
+              "reasoning": "The checklist explicitly states 'Grandfathered-pricing customers see an explicit irreversibility warning.'"
+            },
+            {
+              "claim": "The warning informs the customer that upgrading will forfeit their grandfathered pricing permanently",
+              "supported": false,
+              "reasoning": "The source only mentions the existence of an 'irreversibility warning' but never states the specific content or wording that it forfeits grandfathered pricing permanently; this is an inferred detail not explicitly stated."
+            },
+            {
+              "claim": "The system requires explicit confirmation before proceeding with the upgrade",
+              "supported": false,
+              "reasoning": "There is no mention in the source of a confirmation step or requirement for the customer to explicitly confirm before the upgrade proceeds."
+            }
+          ]
+        },
+        {
+          "title": "Plan catalog misconfiguration: 'upgrade' target is actually cheaper than current plan",
+          "expected_result": "System compares prices, determines this is actually a downgrade by price, and applies downgrade flow (deferred effect, no credit) rather than immediate-effect upgrade logic",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "System compares prices (not plan name/tier label) to determine whether a change is an upgrade or downgrade",
+              "supported": true,
+              "reasoning": "The edge case bullet explicitly states the system should treat this by price comparison, not by plan name/tier label, to decide upgrade vs. downgrade logic."
+            },
+            {
+              "claim": "In this scenario, the price comparison determines the change is actually a downgrade",
+              "supported": true,
+              "reasoning": "The scenario describes attempting to 'upgrade' to a plan that is actually cheaper, which by price comparison would be classified as a downgrade per the stated rule."
+            },
+            {
+              "claim": "The system applies downgrade flow: deferred effect until next billing cycle",
+              "supported": true,
+              "reasoning": "Context explicitly states downgrades do not take effect immediately; customer keeps current-plan access until end of billing cycle and new plan begins at next billing date."
+            },
+            {
+              "claim": "No credit is issued as part of the downgrade flow",
+              "supported": true,
+              "reasoning": "Context explicitly states 'No credit is issued for a downgrade.'"
+            },
+            {
+              "claim": "Immediate-effect upgrade logic (with proration) is not applied in this case",
+              "supported": true,
+              "reasoning": "Since the system correctly classifies this as a downgrade by price, the upgrade logic (immediate effect, proration) would not apply, consistent with the described upgrade vs downgrade distinction and the edge case instruction to use price-based logic."
+            }
+          ]
+        },
+        {
+          "title": "Concurrent plan-change request while a previous request is still processing",
+          "expected_result": "System prevents or queues the second plan-change request until the first completes, avoiding partial or conflicting plan states",
+          "score": 0.0,
+          "claims": [
+            {
+              "claim": "System prevents or queues the second plan-change request until the first completes",
+              "supported": false,
+              "reasoning": "The source context only mentions as an edge case heading 'Customer attempts to change plans while a previous plan-change request for...' which is cut off and does not specify any resolution behavior such as preventing or queuing the request."
+            },
+            {
+              "claim": "This behavior avoids partial or conflicting plan states",
+              "supported": false,
+              "reasoning": "No text in the source describes the outcome or rationale for handling concurrent plan-change requests; the relevant sentence is truncated before any resolution or rationale is given."
+            }
+          ]
+        },
+        {
+          "title": "Failed payment during upgrade leaves customer on original plan",
+          "expected_result": "Plan change does not take effect; customer remains on Starter plan with no partial state change; inline error is shown with decline reason (if provided) and a link to update payment method",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "Plan change does not take effect on failed payment",
+              "supported": true,
+              "reasoning": "Source states 'If the prorated upgrade charge fails ... the plan change does not take effect.'"
+            },
+            {
+              "claim": "Customer remains on Starter plan (original plan) with no partial state change",
+              "supported": true,
+              "reasoning": "Source states 'The customer remains on their original plan' and a separate checklist item states 'no partial state change', both directly supporting this claim; Starter is used as the example original plan in the source's upgrade scenario."
+            },
+            {
+              "claim": "An inline error is shown with the decline reason if provided",
+              "supported": true,
+              "reasoning": "Source explicitly states 'Show an inline error with the decline reason (if provided by the payment processor)'."
+            },
+            {
+              "claim": "A link to update payment method is shown",
+              "supported": true,
+              "reasoning": "Source explicitly states 'and a link to update payment method'."
+            }
+          ]
+        },
+        {
+          "title": "Failed payment during upgrade with no decline reason provided by processor",
+          "expected_result": "Plan change does not take effect; customer remains on original plan; inline error is shown (generic failure messaging since no decline reason available) with link to update payment method",
+          "score": 0.75,
+          "claims": [
+            {
+              "claim": "Plan change does not take effect",
+              "supported": true,
+              "reasoning": "The source explicitly states: 'the plan change does not take effect' if the prorated upgrade charge fails."
+            },
+            {
+              "claim": "Customer remains on original plan",
+              "supported": true,
+              "reasoning": "The source explicitly states: 'The customer remains on their original plan.'"
+            },
+            {
+              "claim": "Inline error is shown with generic failure messaging since no decline reason is available",
+              "supported": false,
+              "reasoning": "The source says to show an inline error 'with the decline reason (if provided by the payment processor)', implying the decline reason should be shown when available. It does not state that no decline reason is available or that generic failure messaging is used instead; this is an unsupported assumption/fabrication."
+            },
+            {
+              "claim": "Link to update payment method is shown",
+              "supported": true,
+              "reasoning": "The source explicitly states to show 'a link to update payment method.'"
+            }
+          ]
+        },
+        {
+          "title": "Attempt to upgrade with no payment method on file",
+          "expected_result": "Prorated charge attempt fails due to missing payment method; plan change does not take effect; customer remains on original plan with inline error directing them to add a payment method",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "The prorated charge attempt fails due to missing payment method (card declined, insufficient funds, etc.)",
+              "supported": true,
+              "reasoning": "Context explicitly states 'If the prorated upgrade charge fails (card declined, insufficient funds), the plan change does not take effect.' 'Missing payment method' is a plausible failure cause consistent with this, and the inline error link to add a payment method supports this scenario being covered."
+            },
+            {
+              "claim": "The plan change does not take effect",
+              "supported": true,
+              "reasoning": "Directly stated: 'the plan change does not take effect.'"
+            },
+            {
+              "claim": "The customer remains on their original plan",
+              "supported": true,
+              "reasoning": "Directly stated: 'The customer remains on their original plan.'"
+            },
+            {
+              "claim": "An inline error is shown directing the customer to add a payment method",
+              "supported": true,
+              "reasoning": "Context states 'Show an inline error with the decline reason ... and a link to update payment method,' which supports the inline error directing to add/update a payment method."
+            }
+          ]
+        },
+        {
+          "title": "Upgrade log entry is created and visible in Billing history even for immediate-effect change",
+          "expected_result": "A log entry for the plan change (upgrade) is present in Billing history, including relevant details per NFR4 logging requirements",
+          "score": 0.5,
+          "claims": [
+            {
+              "claim": "A log entry for the plan change (upgrade) is present in Billing history",
+              "supported": true,
+              "reasoning": "The checklist item states 'All plan changes are logged per NFR4 and visible in Billing history,' which directly supports that upgrade plan changes are logged and visible in Billing history."
+            },
+            {
+              "claim": "The log entry includes relevant details per NFR4 logging requirements",
+              "supported": false,
+              "reasoning": "The source only references 'NFR4' by name without describing any specific logging requirements or details it mandates, so no claim about specific details being included can be verified from this context."
+            }
+          ]
+        },
+        {
+          "title": "Failed upgrade payment does not create an erroneous plan-change log entry indicating success",
+          "expected_result": "Billing history reflects the failed upgrade attempt (or no successful plan-change entry) without indicating the customer moved to Pro plan; customer's plan remains Starter",
+          "score": 0.6666666666666666,
+          "claims": [
+            {
+              "claim": "The customer's plan remains Starter (i.e., failed upgrade leaves customer on original plan)",
+              "supported": true,
+              "reasoning": "The context explicitly states: 'If the prorated upgrade charge fails... the plan change does not take effect. The customer remains on their original plan.' Given the scenario is a Starter->Pro upgrade attempt, remaining on original plan means remaining on Starter."
+            },
+            {
+              "claim": "Billing history does not show a successful plan-change entry indicating a move to Pro",
+              "supported": true,
+              "reasoning": "The context states 'All plan changes are logged per NFR4 and visible in Billing history' and that a failed upgrade means 'the plan change does not take effect.' Since no plan change occurred, logically no successful plan-change entry to Pro would be logged, though the context doesn't explicitly describe what a failed attempt entry looks like."
+            },
+            {
+              "claim": "Billing history reflects the failed upgrade attempt (an entry exists documenting the failed attempt)",
+              "supported": false,
+              "reasoning": "The context only says 'plan changes are logged' and shows an inline error for failed payment; it does not explicitly state that failed/unsuccessful upgrade attempts (as opposed to successful plan changes) are logged in Billing history. This is an inference not directly supported by the text."
+            }
+          ]
+        },
+        {
+          "title": "Upgrade from Business (highest tier) attempted where no higher plan exists",
+          "expected_result": "System does not present a further upgrade option; no erroneous upgrade action is possible since no higher-priced plan is available",
+          "score": 0.0,
+          "claims": [
+            {
+              "claim": "System does not present a further upgrade option (implying the customer is on the highest available plan, e.g. Business)",
+              "supported": false,
+              "reasoning": "The source context mentions Starter, Pro, and Business plans and describes upgrade/downgrade mechanics, but does not describe any UI behavior about presenting or hiding upgrade options, nor does it establish a scenario where the customer is on the top-tier plan with no higher plan available."
+            },
+            {
+              "claim": "No erroneous upgrade action is possible since no higher-priced plan is available",
+              "supported": false,
+              "reasoning": "The context does not discuss a scenario of unavailability of higher-priced plans preventing erroneous actions; this claim is not grounded in any explicit statement from the source material, which instead focuses on proration, failed payments, and downgrade timing."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "feature_name": "Downgrade flow",
+      "test_cases": [
+        {
+          "title": "Standard downgrade from Pro to Starter defers to next billing cycle",
+          "expected_result": "Customer retains Pro-level access until the end of the current billing cycle; Starter plan is scheduled to begin at the next billing date; no credit is issued.",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "Customer retains Pro-level access until the end of the current billing cycle",
+              "supported": true,
+              "reasoning": "The context states the customer keeps current-plan access until the end of the current billing cycle when downgrading, and the Pro->Starter example is explicitly given as the downgrade scenario."
+            },
+            {
+              "claim": "Starter plan is scheduled to begin at the next billing date",
+              "supported": true,
+              "reasoning": "The context explicitly states the new (lower) plan begins at the next billing date, consistent with the Pro->Starter example."
+            },
+            {
+              "claim": "No credit is issued",
+              "supported": true,
+              "reasoning": "The context explicitly states no credit is issued for a downgrade."
+            }
+          ]
+        },
+        {
+          "title": "Downgrade confirmation clearly communicates no credit and deferred timing",
+          "expected_result": "Confirmation dialog states current plan access continues until end of billing cycle, new plan starts next cycle, and no credit will be issued.",
+          "score": 0.75,
+          "claims": [
+            {
+              "claim": "Current plan access continues until end of billing cycle",
+              "supported": true,
+              "reasoning": "Source states 'The customer keeps current-plan access until the end of the current billing cycle' for downgrades."
+            },
+            {
+              "claim": "New plan starts next cycle",
+              "supported": true,
+              "reasoning": "Source states 'the new (lower) plan begins at the next billing date.'"
+            },
+            {
+              "claim": "No credit will be issued",
+              "supported": true,
+              "reasoning": "Source explicitly states 'No credit is issued for a downgrade.'"
+            },
+            {
+              "claim": "This information is presented in a confirmation dialog",
+              "supported": false,
+              "reasoning": "The source describes the downgrade policy and behavior but never mentions a confirmation dialog or UI element displaying this text; this is an unsupported addition about presentation."
+            }
+          ]
+        },
+        {
+          "title": "Downgrade at exact end of billing cycle takes effect on schedule",
+          "expected_result": "Downgrade takes effect exactly at the next billing date; Starter plan access begins with no credit issued for the prior cycle.",
+          "score": 0.6666666666666666,
+          "claims": [
+            {
+              "claim": "Downgrade takes effect exactly at the next billing date",
+              "supported": true,
+              "reasoning": "Source states 'the new (lower) plan begins at the next billing date' and 'downgrades apply at next billing cycle', directly supporting this."
+            },
+            {
+              "claim": "Starter plan access begins with the downgrade",
+              "supported": false,
+              "reasoning": "The source describes downgrades generically (e.g. Pro -> Starter) but does not confirm the specific scenario is to Starter plan; it's given only as an example, so treating Starter as the definite target plan is an assumption not explicitly grounded, though closely tied to the example."
+            },
+            {
+              "claim": "No credit is issued for the prior cycle upon downgrade",
+              "supported": true,
+              "reasoning": "Source explicitly states 'No credit is issued for a downgrade' confirming this claim."
+            }
+          ]
+        },
+        {
+          "title": "Customer upgrades again before a pending downgrade takes effect - downgrade is cancelled, not stacked",
+          "expected_result": "The pending downgrade to Starter is cancelled entirely (not stacked or queued); the upgrade to Business applies immediately with correct proration.",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "The pending downgrade to Starter is cancelled entirely (not stacked or queued)",
+              "supported": true,
+              "reasoning": "The source explicitly lists this edge case: 'Customer downgrades, then upgrades again before the downgrade has taken effect at cycle end \u2014 the pending downgrade should be cancelled, not stacked.' This directly supports the claim."
+            },
+            {
+              "claim": "The upgrade to Business applies immediately",
+              "supported": true,
+              "reasoning": "The source states 'Upgrades apply immediately with correct proration,' which supports the immediate application of an upgrade, though it does not specifically mention 'Business' as the target plan -- the general rule applies to all upgrades."
+            },
+            {
+              "claim": "The upgrade applies with correct proration",
+              "supported": true,
+              "reasoning": "The source explicitly states 'Upgrades apply immediately with correct proration,' directly supporting this claim."
+            }
+          ]
+        },
+        {
+          "title": "Downgrade then downgrade again before cycle end replaces the earlier pending downgrade",
+          "expected_result": "Only one pending downgrade exists at a time; the pending change is updated to Starter (replacing Pro) with no credit issued, effective next billing cycle.",
+          "score": 0.5,
+          "claims": [
+            {
+              "claim": "Only one pending downgrade can exist at a time",
+              "supported": false,
+              "reasoning": "The context lists 'customer downgrades, then upgrades again before the downgrade has taken effect' as an open edge case/question to resolve, not a stated rule. It says the pending downgrade 'should be cancelled, not stacked' in that specific scenario (downgrade then upgrade), but does not state a general rule that only one pending downgrade can ever exist, nor address downgrade-then-downgrade scenarios explicitly."
+            },
+            {
+              "claim": "A pending change is updated to Starter (replacing Pro) when a new downgrade request occurs",
+              "supported": false,
+              "reasoning": "The source only describes the case of downgrade-then-upgrade, where the pending downgrade should be cancelled. It does not describe a scenario of downgrade-then-another-downgrade where the pending plan is replaced/updated to a new target like Starter."
+            },
+            {
+              "claim": "No credit is issued for the downgrade",
+              "supported": true,
+              "reasoning": "The context explicitly states 'No credit is issued for a downgrade' and 'downgrades apply at next billing cycle with no credit issued.'"
+            },
+            {
+              "claim": "The change is effective next billing cycle",
+              "supported": true,
+              "reasoning": "The context explicitly states downgrades take effect at the next billing date/cycle, not immediately."
+            }
+          ]
+        },
+        {
+          "title": "Downgrade logged and visible in Billing history",
+          "expected_result": "Billing history shows an entry recording the downgrade request, effective date, and confirmation of no credit issued.",
+          "score": 0.3333333333333333,
+          "claims": [
+            {
+              "claim": "Billing history shows an entry recording the downgrade request",
+              "supported": true,
+              "reasoning": "Context states 'All plan changes are logged per NFR4 and visible in Billing history,' which covers downgrade requests as a type of plan change."
+            },
+            {
+              "claim": "The billing history entry records the effective date",
+              "supported": false,
+              "reasoning": "Context explains downgrades take effect at the next billing cycle, but does not explicitly state that the logged billing history entry includes or displays an 'effective date' field."
+            },
+            {
+              "claim": "The billing history entry includes confirmation of no credit issued",
+              "supported": false,
+              "reasoning": "Context states no credit is issued for downgrades, but does not state that this fact is explicitly recorded or confirmed within the billing history log entry itself."
+            }
+          ]
+        },
+        {
+          "title": "Grandfathered-pricing customer sees irreversibility warning before downgrading",
+          "expected_result": "System displays an explicit warning that leaving grandfathered pricing is irreversible before allowing the customer to confirm the downgrade.",
+          "score": 0.25,
+          "claims": [
+            {
+              "claim": "Grandfathered-pricing customers see an explicit irreversibility warning.",
+              "supported": true,
+              "reasoning": "Directly stated in the acceptance criteria: 'Grandfathered-pricing customers see an explicit irreversibility warning.'"
+            },
+            {
+              "claim": "The warning is displayed specifically before the customer confirms the downgrade action (i.e., blocks/gates confirmation).",
+              "supported": false,
+              "reasoning": "The source only states that an irreversibility warning is shown; it does not specify the UI flow detail that it appears before and gates the confirm action for a downgrade specifically."
+            },
+            {
+              "claim": "Leaving grandfathered pricing is irreversible.",
+              "supported": false,
+              "reasoning": "The source does not explicitly state that leaving grandfathered pricing is irreversible -- it only mentions that an irreversibility warning is shown, without confirming the underlying fact of irreversibility or explaining what it refers to."
+            },
+            {
+              "claim": "The warning applies in the context of a downgrade specifically.",
+              "supported": false,
+              "reasoning": "The bullet point about grandfathered pricing is listed generally, not tied specifically to downgrade actions as opposed to any plan change; the source does not explicitly link this warning to the downgrade scenario alone."
+            }
+          ]
+        },
+        {
+          "title": "Downgrade with active coupon/discount does not trigger credit or incorrect proration",
+          "expected_result": "No credit or proration calculation is applied for the downgrade regardless of active discount; discount continues to apply to remaining current-cycle access as expected until cycle end.",
+          "score": 0.5,
+          "claims": [
+            {
+              "claim": "No credit or proration calculation is applied for the downgrade.",
+              "supported": true,
+              "reasoning": "The source explicitly states 'No credit is issued for a downgrade' and downgrades do not take effect immediately, implying no proration calculation occurs at time of downgrade."
+            },
+            {
+              "claim": "This applies regardless of active discount.",
+              "supported": false,
+              "reasoning": "The source lists 'Proration calculation when a coupon/discount code is active on the account' as an open question/edge case to be resolved, not as a documented behavior. It does not state that the no-credit rule holds regardless of discount."
+            },
+            {
+              "claim": "The discount continues to apply to remaining current-cycle access.",
+              "supported": false,
+              "reasoning": "The source does not mention how discounts behave during the remaining current-cycle access after a downgrade is initiated; this is listed only as an unresolved edge case, not a stated fact."
+            },
+            {
+              "claim": "This continues as expected until cycle end.",
+              "supported": true,
+              "reasoning": "The source confirms the customer keeps current-plan access until the end of the current billing cycle, supporting the timing aspect, though not tied to discount continuation specifically."
+            }
+          ]
+        },
+        {
+          "title": "Attempt to downgrade while account currency differs from plan pricing currency",
+          "expected_result": "System handles currency mismatch appropriately (e.g., blocks selection or converts/display clarifies pricing) without allowing an inconsistent or broken billing state.",
+          "score": 0.3333333333333333,
+          "claims": [
+            {
+              "claim": "The system encounters a currency mismatch scenario (customer's account currency differs from a promotional plan priced only in USD).",
+              "supported": true,
+              "reasoning": "This is explicitly listed as an edge case in the source context: 'Currency mismatch: customer's account currency differs from a promotional plan priced only in USD.'"
+            },
+            {
+              "claim": "The system handles this currency mismatch by blocking selection or converting/clarifying pricing display.",
+              "supported": false,
+              "reasoning": "The source context only identifies the currency mismatch as an open edge case to consider; it does not specify or describe any particular resolution behavior such as blocking selection or converting/displaying pricing."
+            },
+            {
+              "claim": "The system does not allow an inconsistent or broken billing state as a result of currency mismatch.",
+              "supported": false,
+              "reasoning": "No expected behavior or handling for the currency mismatch case is defined in the source; the context lists it as an unresolved consideration, not a specified requirement or guarantee."
+            }
+          ]
+        },
+        {
+          "title": "Non-self-serve customer cannot access downgrade flow without support",
+          "expected_result": "System prevents self-serve downgrade and directs the customer to contact support, consistent with acceptance criteria scope limited to self-serve customers on Starter, Pro, and Business.",
+          "score": 0.3333333333333333,
+          "claims": [
+            {
+              "claim": "System prevents self-serve downgrade",
+              "supported": false,
+              "reasoning": "The source states the opposite: self-serve customers on Starter, Pro, and Business CAN downgrade without contacting support. Downgrades apply at next billing cycle rather than being prevented."
+            },
+            {
+              "claim": "System directs the customer to contact support for downgrade",
+              "supported": false,
+              "reasoning": "The source explicitly states plan changes are self-serve and do not require contacting support; the current contact-support process is described as the existing problematic state being replaced, not the new expected behavior."
+            },
+            {
+              "claim": "Acceptance criteria scope is limited to self-serve customers on Starter, Pro, and Business",
+              "supported": true,
+              "reasoning": "This is directly stated in the acceptance criteria: 'Self-serve customers on Starter, Pro, and Business can upgrade or downgrade without contacting support.'"
+            }
+          ]
+        },
+        {
+          "title": "Downgrade request fails to cancel a pending upgrade improperly (no invalid stacked state)",
+          "expected_result": "System prevents an invalid stacked/conflicting state; either blocks the downgrade until upgrade resolves or clearly cancels/replaces the pending change consistently, with no partial or corrupted plan state.",
+          "score": 0.5,
+          "claims": [
+            {
+              "claim": "The system must prevent an invalid stacked/conflicting state when a customer upgrades before a pending downgrade takes effect",
+              "supported": true,
+              "reasoning": "The source explicitly lists this scenario: 'Customer downgrades, then upgrades again before the downgrade has taken effect at cycle end \u2014 the pending downgrade should be cancelled, not stacked.'"
+            },
+            {
+              "claim": "The system should block the downgrade until the upgrade resolves as one valid resolution approach",
+              "supported": false,
+              "reasoning": "The source only specifies that the pending downgrade should be cancelled, not stacked; it does not mention or imply an alternative of blocking the downgrade until upgrade resolves as an acceptable approach."
+            },
+            {
+              "claim": "The system should clearly cancel/replace the pending change consistently",
+              "supported": true,
+              "reasoning": "This directly matches the source statement that 'the pending downgrade should be cancelled, not stacked' when an upgrade occurs before the downgrade takes effect."
+            },
+            {
+              "claim": "There should be no partial or corrupted plan state",
+              "supported": false,
+              "reasoning": "While the source mentions 'no partial state change' in the context of failed upgrade payments, it does not explicitly state this requirement for the downgrade-then-upgrade stacking scenario; this is an inferential extension not directly supported by the context for this specific case."
+            }
+          ]
+        },
+        {
+          "title": "Downgrade does not issue credit even when customer requests one via support-style workaround",
+          "expected_result": "No credit is issued under any circumstance for the downgrade, per policy preventing gaming of downgrade/upgrade cycles.",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "No credit is issued for a downgrade under any circumstance",
+              "supported": true,
+              "reasoning": "The context explicitly states 'No credit is issued for a downgrade' with no exceptions mentioned."
+            },
+            {
+              "claim": "The no-credit policy exists to prevent gaming of downgrade/upgrade cycles",
+              "supported": true,
+              "reasoning": "The context explicitly states 'this avoids customers gaming short-term downgrade/upgrade cycles for credits.'"
+            }
+          ]
+        },
+        {
+          "title": "Downgrade scheduling fails gracefully on backend error, leaving customer on current plan",
+          "expected_result": "Customer remains fully on Pro plan with no partial state change; an error message is shown indicating the downgrade could not be scheduled, and no downgrade entry appears in Billing history as completed.",
+          "score": 0.0,
+          "claims": [
+            {
+              "claim": "Customer remains fully on Pro plan with no partial state change",
+              "supported": false,
+              "reasoning": "The source describes this 'no partial state change' behavior only for failed payment on an upgrade, not for downgrades. Downgrades are described as not taking effect until end of billing cycle but there is no failure scenario described for downgrades in the context (downgrades don't involve a charge that could fail, unlike upgrades)."
+            },
+            {
+              "claim": "An error message is shown indicating the downgrade could not be scheduled",
+              "supported": false,
+              "reasoning": "The source only mentions an inline error being shown for failed upgrade payments (card declined/insufficient funds). There is no mention of a scenario where a downgrade fails to be scheduled or any associated error message for downgrades."
+            },
+            {
+              "claim": "No downgrade entry appears in Billing history as completed",
+              "supported": false,
+              "reasoning": "The source states all plan changes are logged and visible in Billing history, but does not describe any scenario of a downgrade failing to schedule or how such a failure would appear (or not appear) in Billing history."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "feature_name": "Billing cycle changes",
+      "test_cases": [
+        {
+          "title": "Switch from monthly to annual billing successfully",
+          "expected_result": "Customer is immediately charged the annual rate, prorated by crediting the unused portion of the current monthly cycle against the annual charge. Billing cycle is updated to annual.",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "Customer is immediately charged the annual rate when switching from monthly to annual",
+              "supported": true,
+              "reasoning": "Source states 'Switching from monthly to annual: charge the annual rate immediately'."
+            },
+            {
+              "claim": "The charge is prorated by crediting the unused portion of the current monthly cycle against the annual charge",
+              "supported": true,
+              "reasoning": "Source states 'prorated by crediting the unused portion of the current monthly cycle against the annual charge'."
+            },
+            {
+              "claim": "Billing cycle is updated to annual",
+              "supported": true,
+              "reasoning": "This is directly implied by the described action of switching from monthly to annual billing, which necessarily results in the billing cycle being updated to annual."
+            }
+          ]
+        },
+        {
+          "title": "Attempt to switch from annual to monthly mid-cycle",
+          "expected_result": "System prevents the switch and informs the customer they must wait until their annual renewal date to switch to monthly billing.",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "System prevents the switch from annual to monthly billing mid-cycle",
+              "supported": true,
+              "reasoning": "Context explicitly states 'Switching from annual to monthly: NOT allowed mid-cycle'."
+            },
+            {
+              "claim": "System informs the customer they must wait until their annual renewal date to switch to monthly billing",
+              "supported": true,
+              "reasoning": "Context explicitly states 'the customer must wait until their annual renewal date, at which point they can select monthly billing before the renewal charge fires'."
+            }
+          ]
+        },
+        {
+          "title": "Switch from annual to monthly at renewal date",
+          "expected_result": "Customer is switched to monthly billing and the renewal charge reflects the monthly rate instead of the annual rate.",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "Customer is switched to monthly billing at the annual renewal date",
+              "supported": true,
+              "reasoning": "The context states switching from annual to monthly is not allowed mid-cycle and the customer must wait until their annual renewal date to select monthly billing before the renewal charge fires."
+            },
+            {
+              "claim": "The renewal charge reflects the monthly rate instead of the annual rate",
+              "supported": true,
+              "reasoning": "The context implies that if the customer selects monthly billing before the renewal charge fires, that renewal charge would then be at the monthly rate rather than the annual rate."
+            }
+          ]
+        },
+        {
+          "title": "View monthly and annual pricing in plan comparison modal",
+          "expected_result": "Modal displays all available plans side by side, current plan highlighted, each showing both monthly and annual pricing along with a feature comparison table.",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "The modal displays all available plans side by side.",
+              "supported": true,
+              "reasoning": "Source states 'Clicking \"Change plan\" opens a modal showing all available plans side by side'."
+            },
+            {
+              "claim": "The customer's current plan is highlighted in the modal.",
+              "supported": true,
+              "reasoning": "Source states 'with the customer's current plan highlighted'."
+            },
+            {
+              "claim": "Each plan shows both monthly and annual pricing.",
+              "supported": true,
+              "reasoning": "Source states 'Each plan shows monthly and annual pricing'."
+            },
+            {
+              "claim": "The modal includes a feature comparison table.",
+              "supported": true,
+              "reasoning": "Source states 'and a feature comparison table', directly following the modal description."
+            }
+          ]
+        },
+        {
+          "title": "Switch to annual billing on the last day of the monthly cycle",
+          "expected_result": "Annual rate is charged immediately with a minimal or near-zero proration credit reflecting the negligible unused portion of the monthly cycle.",
+          "score": 0.6666666666666666,
+          "claims": [
+            {
+              "claim": "The annual rate is charged immediately when switching from monthly to annual.",
+              "supported": true,
+              "reasoning": "The source explicitly states 'Switching from monthly to annual: charge the annual rate immediately.'"
+            },
+            {
+              "claim": "The charge is prorated by crediting the unused portion of the current monthly cycle against the annual charge.",
+              "supported": true,
+              "reasoning": "The source explicitly states this proration mechanism: 'prorated by crediting the unused portion of the current monthly cycle against the annual charge.'"
+            },
+            {
+              "claim": "The proration credit is minimal or near-zero, reflecting a negligible unused portion of the monthly cycle.",
+              "supported": false,
+              "reasoning": "The source describes the proration mechanism generically without specifying that the credited amount is minimal or near-zero; the magnitude of the credit depends on when in the cycle the switch occurs and is not characterized as negligible in the source."
+            }
+          ]
+        },
+        {
+          "title": "Switch to annual billing on the first day of the monthly cycle",
+          "expected_result": "Annual rate is charged immediately with the maximum possible proration credit applied, reflecting nearly the full unused monthly cycle.",
+          "score": 0.6666666666666666,
+          "claims": [
+            {
+              "claim": "The annual rate is charged immediately when switching from monthly to annual.",
+              "supported": true,
+              "reasoning": "The source explicitly states 'Switching from monthly to annual: charge the annual rate immediately.'"
+            },
+            {
+              "claim": "A proration credit is applied for the unused portion of the current monthly cycle against the annual charge.",
+              "supported": true,
+              "reasoning": "The source states this is 'prorated by crediting the unused portion of the current monthly cycle against the annual charge.'"
+            },
+            {
+              "claim": "The maximum possible proration credit is applied, reflecting nearly the full unused monthly cycle.",
+              "supported": false,
+              "reasoning": "The source does not specify the magnitude, timing, or amount of unused cycle remaining; it gives a general proration mechanism, not a claim about the credit being maximal or 'nearly the full' cycle. This is an unsupported assumption about a specific scenario not described in the context."
+            }
+          ]
+        },
+        {
+          "title": "Attempt annual-to-monthly switch exactly at renewal charge firing time",
+          "expected_result": "System either allows the switch only if it strictly precedes the renewal charge, or blocks the switch and applies the annual renewal charge as normal; no double-charging or inconsistent state occurs.",
+          "score": 0.0,
+          "claims": [
+            {
+              "claim": "System allows the switch only if it strictly precedes the renewal charge",
+              "supported": false,
+              "reasoning": "The source states the customer must wait until the annual renewal date, at which point they can select monthly billing before the renewal charge fires. This describes a specific allowed window at renewal, not a general rule that any switch is allowed as long as it precedes the renewal charge; the claim generalizes and rephrases the source's narrow condition."
+            },
+            {
+              "claim": "System blocks the switch and applies the annual renewal charge as normal",
+              "supported": false,
+              "reasoning": "The source says switching annual to monthly is NOT allowed mid-cycle and the customer must wait until the renewal date to select monthly billing before the renewal charge fires. It does not describe a scenario where the switch is blocked and the annual renewal charge is applied as normal despite the customer's attempt; this is not stated or implied."
+            },
+            {
+              "claim": "No double-charging or inconsistent state occurs",
+              "supported": false,
+              "reasoning": "The source does not explicitly discuss double-charging risk or state consistency guarantees for the annual-to-monthly switch scenario; this is an inferred quality claim not directly supported by the text."
+            }
+          ]
+        },
+        {
+          "title": "Switch from monthly to annual combined with a plan upgrade",
+          "expected_result": "Customer is charged the Pro annual rate immediately, with proration crediting the unused portion of the current monthly cycle against the new annual charge.",
+          "score": 0.5,
+          "claims": [
+            {
+              "claim": "Customer is charged the Pro annual rate immediately",
+              "supported": false,
+              "reasoning": "The source describes 'Pro' only in the context of an upgrade example (Starter -> Pro) for plan tier changes, not billing cycle changes. The annual rate charge applies generically to a monthly->annual switch, but the context does not specify the plan is Pro; this claim conflates the billing-cycle-switch scenario with a specific plan name not mentioned in that rule."
+            },
+            {
+              "claim": "The charge is prorated by crediting the unused portion of the current monthly cycle against the new annual charge",
+              "supported": true,
+              "reasoning": "The source explicitly states: 'Switching from monthly to annual: charge the annual rate immediately, prorated by crediting the unused portion of the current monthly cycle against the annual charge.'"
+            }
+          ]
+        },
+        {
+          "title": "Switch to annual billing when unused monthly credit exceeds annual charge",
+          "expected_result": "System correctly calculates and applies the proration credit; if credit exceeds the annual charge, the resulting charge is handled per proration rule (e.g., charge floored at zero or remaining credit applied/documented) without resulting in a negative charge to the customer.",
+          "score": 0.3333333333333333,
+          "claims": [
+            {
+              "claim": "The system calculates a proration credit when switching from monthly to annual, crediting the unused portion of the current monthly cycle against the annual charge.",
+              "supported": true,
+              "reasoning": "The source explicitly states that switching monthly to annual charges the annual rate immediately, 'prorated by crediting the unused portion of the current monthly cycle against the annual charge.'"
+            },
+            {
+              "claim": "If the credit exceeds the annual charge, the system handles this per a defined proration rule (e.g., flooring the charge at zero or applying/documenting the remaining credit).",
+              "supported": false,
+              "reasoning": "The source does not address the scenario where the credit exceeds the annual charge, nor does it specify any rule for flooring the charge or applying/documenting excess credit. This is an unstated edge case not covered by the context."
+            },
+            {
+              "claim": "The system never applies a negative charge to the customer as a result of this proration.",
+              "supported": false,
+              "reasoning": "The source contains no statement about negative charges or safeguards against them; this is an inference not directly supported by the given context."
+            }
+          ]
+        },
+        {
+          "title": "Reject monthly-to-annual switch for customer with no active subscription",
+          "expected_result": "System prevents the billing cycle change and displays an appropriate error indicating there is no active subscription to modify.",
+          "score": 0.0,
+          "claims": [
+            {
+              "claim": "System prevents the billing cycle change",
+              "supported": false,
+              "reasoning": "The source describes annual-to-monthly switching as disallowed mid-cycle, but the general claim as stated is not tied to a specific scenario; more importantly, there's no mention of a scenario involving no active subscription at all in the source context."
+            },
+            {
+              "claim": "System displays an appropriate error indicating there is no active subscription to modify",
+              "supported": false,
+              "reasoning": "The source context never mentions a 'no active subscription' scenario or error message. It only discusses proration rules and restrictions on annual-to-monthly switching mid-cycle, not a missing/no subscription state."
+            },
+            {
+              "claim": "The reason the billing cycle change is prevented is that there is no active subscription",
+              "supported": false,
+              "reasoning": "This is not grounded in the source at all -- the source discusses timing restrictions (mid-cycle annual-to-monthly) not absence of a subscription."
+            }
+          ]
+        },
+        {
+          "title": "Reject direct annual-to-monthly switch attempt via API bypassing UI restriction",
+          "expected_result": "API rejects the request with an error indicating the switch is not allowed until the annual renewal date, consistent with UI behavior.",
+          "score": 0.3333333333333333,
+          "claims": [
+            {
+              "claim": "The API rejects a request to switch from annual to monthly billing mid-cycle",
+              "supported": true,
+              "reasoning": "The source explicitly states switching from annual to monthly is 'NOT allowed mid-cycle'."
+            },
+            {
+              "claim": "The rejection includes an error indicating the switch is not allowed until the annual renewal date",
+              "supported": false,
+              "reasoning": "The source states the business rule (must wait until renewal date) but does not describe any API error response, its content, or wording."
+            },
+            {
+              "claim": "This API behavior is consistent with UI behavior",
+              "supported": false,
+              "reasoning": "The source describes a UI modal for plan selection but does not state that the UI enforces or displays this same restriction, so no comparison between API and UI behavior can be verified."
+            }
+          ]
+        },
+        {
+          "title": "Handle payment failure during monthly-to-annual proration charge",
+          "expected_result": "Billing cycle switch is not completed; customer remains on monthly billing; system displays a payment failure error and prompts to update payment method.",
+          "score": 0.0,
+          "claims": [
+            {
+              "claim": "The billing cycle switch is not completed (fails)",
+              "supported": false,
+              "reasoning": "The source context describes rules for switching monthly<->annual (proration, or waiting until renewal date) but never mentions a scenario where the switch fails or errors out."
+            },
+            {
+              "claim": "The customer remains on monthly billing",
+              "supported": false,
+              "reasoning": "The context describes conditions under which monthly-to-annual or annual-to-monthly switches occur, but does not describe any case resulting in a failed switch that leaves the customer on monthly billing due to an error."
+            },
+            {
+              "claim": "The system displays a payment failure error",
+              "supported": false,
+              "reasoning": "There is no mention anywhere in the source context of payment failures or payment failure error messages."
+            },
+            {
+              "claim": "The system prompts the customer to update their payment method",
+              "supported": false,
+              "reasoning": "The source context does not mention any prompt to update payment method; this is not discussed at all in the provided material."
+            }
+          ]
+        },
+        {
+          "title": "Duplicate/rapid double-submission of billing cycle switch request",
+          "expected_result": "Only one billing cycle switch and one prorated annual charge is processed; duplicate submissions are ignored or blocked, preventing double charging.",
+          "score": 0.0,
+          "claims": [
+            {
+              "claim": "Only one billing cycle switch is processed",
+              "supported": false,
+              "reasoning": "The source describes rules for switching monthly<->annual but says nothing about handling duplicate or repeated submissions of a billing cycle switch, nor any idempotency/deduplication mechanism."
+            },
+            {
+              "claim": "Only one prorated annual charge is processed",
+              "supported": false,
+              "reasoning": "The source describes how the prorated annual charge is calculated when switching monthly to annual, but does not mention any safeguard limiting it to a single charge or preventing duplicate charges."
+            },
+            {
+              "claim": "Duplicate submissions are ignored or blocked",
+              "supported": false,
+              "reasoning": "There is no mention anywhere in the source context of duplicate submission handling, idempotency checks, or blocking repeated requests."
+            },
+            {
+              "claim": "This prevents double charging",
+              "supported": false,
+              "reasoning": "The source does not discuss double charging risk or any mechanism to prevent it; this is an inferred/fabricated behavior not stated in the context."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "feature_name": "Payment failures",
+      "test_cases": [
+        {
+          "title": "Successful upgrade with valid prorated charge",
+          "expected_result": "Payment succeeds, plan change takes effect immediately, database and Stripe subscription are updated consistently, confirmation email is sent with new plan, effective date, and prorated amount charged, and confirmation screen is shown in-app.",
+          "score": 0.8,
+          "claims": [
+            {
+              "claim": "Payment succeeds",
+              "supported": true,
+              "reasoning": "Implied as the precondition context, since the source discusses what happens when the prorated charge succeeds vs fails; a successful payment scenario is the counterpart to the described failure case."
+            },
+            {
+              "claim": "Plan change takes effect immediately",
+              "supported": false,
+              "reasoning": "The source states plan changes take effect immediately only implicitly for upgrades, but explicitly states downgrades do NOT take effect immediately. Without specifying this is an upgrade, the claim of 'immediate effect' is not universally supported and is ambiguous/incomplete."
+            },
+            {
+              "claim": "Database and Stripe subscription are updated consistently",
+              "supported": true,
+              "reasoning": "The source explicitly states the plan change must be reflected in the database and Stripe subscription object atomically from the customer's point of view."
+            },
+            {
+              "claim": "Confirmation email is sent with new plan, effective date, and prorated amount charged",
+              "supported": true,
+              "reasoning": "The source explicitly states that after a successful plan change, a transactional email is sent confirming the new plan, effective date, and prorated amount charged or credited."
+            },
+            {
+              "claim": "Confirmation screen is shown in-app",
+              "supported": true,
+              "reasoning": "The source explicitly states a confirmation screen is also shown in-app with the same details."
+            }
+          ]
+        },
+        {
+          "title": "Card declined during upgrade charge",
+          "expected_result": "Plan change does not take effect; customer remains on Starter plan; inline error is displayed showing the decline reason returned by the payment processor along with a link to update payment method.",
+          "score": 0.75,
+          "claims": [
+            {
+              "claim": "Plan change does not take effect",
+              "supported": true,
+              "reasoning": "The source states directly: 'the plan change does not take effect' when the prorated upgrade charge fails."
+            },
+            {
+              "claim": "Customer remains on Starter plan",
+              "supported": false,
+              "reasoning": "The source states the customer remains on their 'original plan', but does not specify that plan is 'Starter'. This is an unsupported specific detail introduced by the test case."
+            },
+            {
+              "claim": "Inline error is displayed showing the decline reason returned by the payment processor",
+              "supported": true,
+              "reasoning": "The source states: 'Show an inline error with the decline reason (if provided by the payment processor)', directly matching this claim."
+            },
+            {
+              "claim": "Inline error includes a link to update payment method",
+              "supported": true,
+              "reasoning": "The source explicitly states the inline error should include 'a link to update payment method'."
+            }
+          ]
+        },
+        {
+          "title": "Card declined with no reason provided by processor",
+          "expected_result": "Plan change does not take effect; customer remains on Starter plan; inline error is shown (generic decline message since no reason provided) with a link to update payment method.",
+          "score": 0.6,
+          "claims": [
+            {
+              "claim": "Plan change does not take effect (when the prorated upgrade charge fails)",
+              "supported": true,
+              "reasoning": "Source explicitly states 'If the prorated upgrade charge fails (card declined, insufficient funds), the plan change does not take effect.'"
+            },
+            {
+              "claim": "Customer remains on Starter plan",
+              "supported": false,
+              "reasoning": "Source states the customer remains on their 'original plan', not specifically the Starter plan. The context does not establish that the original plan in this scenario is Starter; it's a generic statement about failed upgrades from any original plan."
+            },
+            {
+              "claim": "An inline error is shown",
+              "supported": true,
+              "reasoning": "Source explicitly states 'Show an inline error with the decline reason (if provided by the payment processor) and a link to update payment method.'"
+            },
+            {
+              "claim": "The error message is generic since no decline reason was provided",
+              "supported": false,
+              "reasoning": "Source only conditionally mentions showing the decline reason 'if provided by the payment processor' but does not state or imply that no reason was provided in this case, nor describe a 'generic decline message' fallback."
+            },
+            {
+              "claim": "The inline error includes a link to update payment method",
+              "supported": true,
+              "reasoning": "Source explicitly states the inline error should include 'a link to update payment method.'"
+            }
+          ]
+        },
+        {
+          "title": "Stripe charge succeeds but database write fails",
+          "expected_result": "System reconciles the inconsistency via webhook retry so the database eventually reflects the successful Stripe charge and plan change; customer is not left in an inconsistent state (e.g. charged but still on old plan indefinitely).",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "System reconciles the inconsistency via webhook retry",
+              "supported": true,
+              "reasoning": "The source explicitly states 'if the Stripe API call succeeds but our database write fails, we must reconcile (via webhook retry) rather than leave the account in an inconsistent state.'"
+            },
+            {
+              "claim": "The database eventually reflects the successful Stripe charge and plan change",
+              "supported": true,
+              "reasoning": "This is the direct implication of the reconciliation requirement \u2014 the reconciliation via webhook retry is meant to bring the database in sync with the successful Stripe API call/charge."
+            },
+            {
+              "claim": "Customer is not left in an inconsistent state (e.g. charged but still on old plan indefinitely)",
+              "supported": true,
+              "reasoning": "The source explicitly says the goal is to avoid leaving 'the account in an inconsistent state', which directly supports this claim, though the specific example phrasing ('charged but still on old plan indefinitely') is an inference consistent with the stated intent rather than a verbatim example."
+            }
+          ]
+        },
+        {
+          "title": "Plan change attempted while previous change still processing",
+          "expected_result": "System prevents the race condition from corrupting state \u2014 either rejects/queues the second request until the first resolves, or handles it gracefully without creating duplicate or conflicting plan changes.",
+          "score": 0.3333333333333333,
+          "claims": [
+            {
+              "claim": "The system must prevent the race condition (concurrent plan-change requests for the same account) from corrupting state",
+              "supported": true,
+              "reasoning": "The source explicitly lists this scenario as a case to be handled: 'Customer attempts to change plans while a previous plan-change request for the same account is still processing (race condition).' However, the source only poses this as an open scenario/question without specifying what the correct handling behavior should be."
+            },
+            {
+              "claim": "The system should reject or queue the second request until the first resolves",
+              "supported": false,
+              "reasoning": "The source only raises the race condition as a scenario to consider; it does not specify rejecting or queuing as the resolution mechanism. This is an assumed/invented solution not stated in the context."
+            },
+            {
+              "claim": "The system should handle it gracefully without creating duplicate or conflicting plan changes",
+              "supported": false,
+              "reasoning": "While the general principle of atomicity and reconciliation (via webhook retry) is mentioned for a different scenario (Stripe API success but DB write failure), the source does not explicitly state that duplicate/conflicting plan changes must be avoided for the concurrent-request race condition specifically -- it leaves this as an open question rather than a defined requirement."
+            }
+          ]
+        },
+        {
+          "title": "Upgrade with $0.00 prorated charge on last day of cycle",
+          "expected_result": "Plan change is treated as valid and takes effect; no payment failure occurs since there is no actual charge; confirmation email is sent and confirmation screen shown reflecting $0.00 charged.",
+          "score": 0.0,
+          "claims": [
+            {
+              "claim": "The plan change is treated as valid and takes effect when the prorated charge amount is $0.00",
+              "supported": false,
+              "reasoning": "The source explicitly poses this scenario as an open question ('should this still count as a valid plan change') rather than stating a definitive answer. It is not resolved in the context."
+            },
+            {
+              "claim": "No payment failure occurs since there is no actual charge",
+              "supported": false,
+              "reasoning": "The context does not explicitly state that a $0.00 charge avoids payment failure; this is an inference not directly confirmed, since the $0.00 case is only raised as an unresolved question."
+            },
+            {
+              "claim": "A confirmation email is sent reflecting the plan change",
+              "supported": false,
+              "reasoning": "The context says confirmation emails are sent 'after any successful plan change,' but whether a $0.00 charge counts as a successful/valid plan change is explicitly left as an open question, so this cannot be confirmed as supported."
+            },
+            {
+              "claim": "A confirmation screen is shown reflecting $0.00 charged",
+              "supported": false,
+              "reasoning": "While the context states a confirmation screen shows the prorated amount charged or credited 'if any,' this only applies after a successful plan change, and the validity of a $0.00 charge plan change is explicitly unresolved in the source."
+            }
+          ]
+        },
+        {
+          "title": "Downgrade does not trigger a payment charge or failure",
+          "expected_result": "No prorated charge is attempted since downgrades take effect at the next billing cycle with no credit issued; customer retains Pro access until end of current cycle; no payment failure scenario applies.",
+          "score": 0.8,
+          "claims": [
+            {
+              "claim": "No prorated charge is attempted for a downgrade",
+              "supported": true,
+              "reasoning": "The context states downgrades do not take effect immediately and no credit is issued, implying no charge/credit transaction occurs at downgrade time; this is directly implied though not stated with the exact phrase 'no charge is attempted'."
+            },
+            {
+              "claim": "Downgrades take effect at the next billing cycle",
+              "supported": true,
+              "reasoning": "The context explicitly states the new (lower) plan begins at the next billing date, matching this claim."
+            },
+            {
+              "claim": "No credit is issued for a downgrade",
+              "supported": true,
+              "reasoning": "The context explicitly states 'No credit is issued for a downgrade.'"
+            },
+            {
+              "claim": "Customer retains Pro access until end of current cycle",
+              "supported": true,
+              "reasoning": "The context states the customer keeps current-plan access until the end of the current billing cycle, which directly implies this for a Pro->Starter downgrade example given."
+            },
+            {
+              "claim": "No payment failure scenario applies to downgrades",
+              "supported": false,
+              "reasoning": "The context only discusses payment failure in relation to prorated upgrade charges failing; it does not explicitly state that payment failure scenarios cannot apply to downgrades, so this is an inference not directly supported by the text."
+            }
+          ]
+        },
+        {
+          "title": "Retry upgrade after updating payment method following a decline",
+          "expected_result": "Charge succeeds with the updated payment method, plan change takes effect, database and Stripe are updated consistently, and confirmation email/screen are shown.",
+          "score": 0.8,
+          "claims": [
+            {
+              "claim": "Charge succeeds with the updated payment method",
+              "supported": false,
+              "reasoning": "The source context only discusses the case where the prorated charge fails and does not mention anything about updating a payment method or a successful charge using an updated payment method. This specific scenario is not addressed."
+            },
+            {
+              "claim": "Plan change takes effect upon successful charge",
+              "supported": true,
+              "reasoning": "The context states that if the charge fails, the plan change does not take effect, implying that a successful charge allows the plan change to take effect (for upgrades). This is a directly implied inverse condition."
+            },
+            {
+              "claim": "Database and Stripe are updated consistently",
+              "supported": true,
+              "reasoning": "The context explicitly states the plan change must be reflected in the database and Stripe subscription object atomically, with reconciliation via webhook retry if inconsistent, supporting this claim."
+            },
+            {
+              "claim": "Confirmation email is shown after successful plan change",
+              "supported": true,
+              "reasoning": "The context explicitly states that after any successful plan change, a transactional confirmation email is sent."
+            },
+            {
+              "claim": "Confirmation screen is shown after successful plan change",
+              "supported": true,
+              "reasoning": "The context explicitly states that a confirmation screen is shown in-app with the same details after a successful plan change."
+            }
+          ]
+        },
+        {
+          "title": "Currency mismatch between account currency and promotional pricing",
+          "expected_result": "System handles the currency mismatch appropriately without corrupting billing state (exact resolution not specified in PRD); at minimum, plan change should not silently succeed with incorrect currency charged, and any failure should show an inline error with available decline reason and link to update payment method.",
+          "score": 0.75,
+          "claims": [
+            {
+              "claim": "The exact resolution for currency mismatch is not specified in the PRD",
+              "supported": true,
+              "reasoning": "The source context lists 'Currency mismatch: customer's account currency differs from a promotional...' as an open, unresolved question/edge case with no stated resolution, confirming this is unspecified."
+            },
+            {
+              "claim": "The system must not silently succeed with the incorrect currency charged",
+              "supported": false,
+              "reasoning": "The source context never discusses what happens if currency mismatch is not caught; it only raises the scenario as an open question without specifying required behavior for silent success or incorrect currency charging."
+            },
+            {
+              "claim": "Any failure should show an inline error with available decline reason and link to update payment method",
+              "supported": true,
+              "reasoning": "The context explicitly states: 'Show an inline error with the decline reason (if provided by the payment processor) and a link to update payment method' for failed charges."
+            },
+            {
+              "claim": "Billing state must not be corrupted (i.e., database and Stripe subscription must remain consistent)",
+              "supported": true,
+              "reasoning": "The context explicitly requires atomicity between the database and Stripe subscription object, with reconciliation via webhook retry to avoid inconsistent state."
+            }
+          ]
+        },
+        {
+          "title": "Insufficient funds decline preserves original plan entitlements",
+          "expected_result": "Customer's original Starter plan access and entitlements remain unchanged; no partial upgrade or feature access granted; inline error with decline reason and link to update payment method is displayed.",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "Customer's original Starter plan access and entitlements remain unchanged",
+              "supported": true,
+              "reasoning": "The source states that if the prorated upgrade charge fails, the plan change does not take effect and the customer remains on their original plan, which directly supports unchanged access/entitlements. The specific mention of 'Starter' plan is an inference from context but consistent with 'original plan.'"
+            },
+            {
+              "claim": "No partial upgrade or feature access granted",
+              "supported": true,
+              "reasoning": "The source explicitly states the plan change does not take effect if the charge fails, implying no partial upgrade or feature access is granted."
+            },
+            {
+              "claim": "Inline error with decline reason is displayed",
+              "supported": true,
+              "reasoning": "The source explicitly states to show an inline error with the decline reason (if provided by the payment processor)."
+            },
+            {
+              "claim": "Link to update payment method is displayed",
+              "supported": true,
+              "reasoning": "The source explicitly states to show a link to update payment method alongside the inline error."
+            }
+          ]
+        },
+        {
+          "title": "No confirmation email sent when payment fails",
+          "expected_result": "No plan-change confirmation email is sent since the plan change did not succeed; only the inline error is shown in-app.",
+          "score": 1.0,
+          "claims": [
+            {
+              "claim": "No plan-change confirmation email is sent when the plan change fails due to declined charge",
+              "supported": true,
+              "reasoning": "The context states confirmation emails are sent 'after any successful plan change,' implying no email is sent when the change fails (as described for failed prorated charges, where the plan change does not take effect)."
+            },
+            {
+              "claim": "The plan change did not succeed (due to failed prorated upgrade charge)",
+              "supported": true,
+              "reasoning": "The context explicitly states that if the prorated upgrade charge fails, the plan change does not take effect and the customer remains on their original plan."
+            },
+            {
+              "claim": "Only an inline error is shown in-app (no confirmation screen)",
+              "supported": true,
+              "reasoning": "The context explicitly instructs to show an inline error with decline reason and a link to update payment method for failed charges, distinct from the confirmation screen shown only after successful plan changes."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
