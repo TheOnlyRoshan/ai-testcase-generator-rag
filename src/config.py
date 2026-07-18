@@ -64,6 +64,12 @@ class EvaluationConfig:
     n_results: int
 
 @dataclass
+class EvaluationConfig:
+    golden_set_path: Path
+    n_results: int
+    faithfulness_output_subdir: str
+
+@dataclass
 class Config:
     paths: PathsConfig
     chunking: ChunkingConfig
@@ -98,5 +104,6 @@ def load_config(path: str | Path | None = None) -> Config:
         evaluation=EvaluationConfig(
             golden_set_path=PROJECT_ROOT / raw["evaluation"]["golden_set_path"],
             n_results=raw["evaluation"]["n_results"],
+            faithfulness_output_subdir=raw["evaluation"]["faithfulness_output_subdir"],
         ),
     )

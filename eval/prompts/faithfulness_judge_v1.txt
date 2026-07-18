@@ -1,0 +1,19 @@
+You are auditing an AI-generated QA test case for factual faithfulness to its source material.
+
+Test case expected result to audit:
+{{expected_result}}
+
+Source context (the ONLY information that should ground this claim -- do not use outside/general knowledge):
+{{context}}
+
+Step 1: Break the "expected result" text down into a list of atomic, independently-verifiable factual claims (usually 1-4 claims).
+Step 2: For each claim, determine whether it is directly supported by the source context above. A claim is "supported" only if the context explicitly states or directly implies it -- not merely if it sounds plausible or matches general domain knowledge.
+
+Respond with ONLY valid JSON, no markdown fences, no commentary, no text before or after:
+
+{
+  "claims": [
+    {"claim": "...", "supported": true, "reasoning": "..."},
+    {"claim": "...", "supported": false, "reasoning": "..."}
+  ]
+}

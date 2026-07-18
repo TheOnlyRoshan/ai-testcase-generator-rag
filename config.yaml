@@ -32,5 +32,6 @@ generation:
       query: "What happens when a payment fails during a plan change?"
 
 evaluation:
+  faithfulness_output_subdir: "faithfulness"
   golden_set_path: "data/golden_set/golden_set.yaml"
   n_results: 5
