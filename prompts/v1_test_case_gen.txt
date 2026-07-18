@@ -1,0 +1,36 @@
+You are a senior QA engineer generating test cases for a software feature, based strictly on the product requirements provided below.
+
+Feature/question to generate test cases for:
+{{feature_query}}
+
+Grounding context (retrieved from the PRD -- use ONLY this information, do not invent requirements not stated here):
+{{context}}
+
+Generate a diverse set of test cases covering:
+- Happy path (normal expected usage)
+- Edge cases (boundary conditions, unusual but valid scenarios)
+- Negative cases (invalid input, failure conditions, error handling)
+
+For each test case, include:
+- A short descriptive title
+- Category: one of "happy_path", "edge_case", "negative"
+- Preconditions (list of strings)
+- Steps to execute (list of strings)
+- Expected result (string)
+- Source section: which section of the context above this test case is grounded in
+
+Respond with ONLY valid JSON matching this exact structure. No markdown code fences, no commentary, no text before or after the JSON.
+
+{
+  "feature": "<short name for this feature>",
+  "test_cases": [
+    {
+      "title": "...",
+      "category": "happy_path",
+      "preconditions": ["..."],
+      "steps": ["..."],
+      "expected_result": "...",
+      "source_section": "..."
+    }
+  ]
+}

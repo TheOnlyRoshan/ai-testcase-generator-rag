@@ -2,3 +2,6 @@ langchain-text-splitters
 pyyaml
 sentence-transformers
 chromadb
+anthropic
+python-dotenv
+pydantic
