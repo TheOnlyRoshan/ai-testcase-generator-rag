@@ -1,0 +1,64 @@
+# Hand-labeled golden set for retrieval + generation evaluation.
+# Each entry: a realistic question a QA engineer might ask about this PRD,
+# and the PRD section(s) that SHOULD ground the answer. Used to measure
+# whether retrieval actually finds the right context, not just *a* context.
+
+- id: g01
+  question: "What happens when a customer upgrades their plan mid-cycle?"
+  expected_sections:
+    - "FR3: Upgrade flow (immediate effect)"
+
+- id: g02
+  question: "What happens when a customer downgrades their plan?"
+  expected_sections:
+    - "FR4: Downgrade flow (deferred effect)"
+
+- id: g03
+  question: "How does switching from monthly to annual billing work?"
+  expected_sections:
+    - "FR5: Billing cycle change (monthly <-> annual)"
+
+- id: g04
+  question: "What happens if a payment fails during an upgrade?"
+  expected_sections:
+    - "FR6: Payment failure during upgrade"
+
+- id: g05
+  question: "What confirmation does a customer receive after changing plans?"
+  expected_sections:
+    - "FR7: Confirmation & receipts"
+
+- id: g06
+  question: "Can a customer see a history of their past plan changes?"
+  expected_sections:
+    - "FR8: Plan change history"
+
+- id: g07
+  question: "What happens if a customer upgrades while still in their free trial?"
+  expected_sections:
+    - "FR9: Mid-trial upgrades"
+
+- id: g08
+  question: "What happens to a customer's pricing if they are on a legacy plan and change plans?"
+  expected_sections:
+    - "FR10: Grandfathered pricing protection"
+
+- id: g09
+  question: "How does the system prevent a customer from being charged twice for the same plan change?"
+  expected_sections:
+    - "NFR1: Idempotency"
+
+- id: g10
+  question: "What should happen if a customer tries to upgrade with less than a day left in their billing cycle?"
+  expected_sections:
+    - "7. Edge cases to handle"
+
+- id: g11
+  question: "What conditions must be true for self-serve customers to change plans without contacting support?"
+  expected_sections:
+    - "8. Acceptance criteria"
+
+- id: g12
+  question: "What is the phased rollout plan for this feature?"
+  expected_sections:
+    - "10. Rollout plan"

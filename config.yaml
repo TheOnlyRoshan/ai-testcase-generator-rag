@@ -11,3 +11,26 @@ embedding:
 
 index:
   collection_name: "prd_chunks"
+
+export:
+  target_json_file: ""
+
+generation:
+  n_results: 5
+  output_dir: "outputs"
+  json_subdir: "json"
+  csv_subdir: "csv"
+  filename_timestamp_format: "%d-%B-%Y-%H-%M-%S"
+  features:
+    - name: "Upgrade flow"
+      query: "How does the upgrade flow work, including immediate effect and proration?"
+    - name: "Downgrade flow"
+      query: "How does the downgrade flow work, including deferred effect and no credit?"
+    - name: "Billing cycle changes"
+      query: "How does switching between monthly and annual billing work?"
+    - name: "Payment failures"
+      query: "What happens when a payment fails during a plan change?"
+
+evaluation:
+  golden_set_path: "data/golden_set/golden_set.yaml"
+  n_results: 5

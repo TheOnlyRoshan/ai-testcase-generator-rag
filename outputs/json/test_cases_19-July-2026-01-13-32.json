@@ -1,0 +1,831 @@
+{
+  "generated_at": "2026-07-18T19:43:32.492653+00:00",
+  "embedding_model": "all-MiniLM-L6-v2",
+  "prompt_version": "v1",
+  "features": [
+    {
+      "feature_name": "Upgrade flow",
+      "feature_query": "How does the upgrade flow work, including immediate effect and proration?",
+      "retrieved_sections": [
+        "FR3: Upgrade flow (immediate effect)",
+        "8. Acceptance criteria",
+        "FR6: Payment failure during upgrade",
+        "FR4: Downgrade flow (deferred effect)",
+        "7. Edge cases to handle"
+      ],
+      "test_cases": [
+        {
+          "title": "Standard upgrade from Starter to Pro mid-cycle applies immediately with correct proration",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer is self-serve and currently on Starter plan",
+            "Customer is mid-way through current billing cycle with valid payment method on file"
+          ],
+          "steps": [
+            "Note days_remaining_in_cycle and total_days_in_cycle for the customer's current cycle",
+            "Navigate to plan settings and select upgrade to Pro plan",
+            "Confirm the upgrade",
+            "Observe plan status and charge applied"
+          ],
+          "expected_result": "New Pro plan takes effect immediately; customer is charged prorated_charge = (new_plan_price - old_plan_price) * (days_remaining_in_cycle / total_days_in_cycle); next full-price invoice remains scheduled at original billing date",
+          "source_section": "FR3: Upgrade flow (immediate effect)"
+        },
+        {
+          "title": "Upgrade from Pro to Business with successful payment logs plan change",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer is self-serve and currently on Pro plan",
+            "Valid payment method on file"
+          ],
+          "steps": [
+            "Initiate upgrade from Pro to Business plan",
+            "Confirm upgrade and successful proration charge",
+            "Navigate to Billing history"
+          ],
+          "expected_result": "Plan change is applied immediately, prorated charge succeeds, and the upgrade event is logged and visible in Billing history per NFR4",
+          "source_section": "8. Acceptance criteria"
+        },
+        {
+          "title": "Upgrade at the very start of billing cycle results in near-maximum proration charge",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on Starter plan",
+            "Current billing cycle just started (days_remaining_in_cycle \u2248 total_days_in_cycle)"
+          ],
+          "steps": [
+            "Initiate upgrade to Pro plan on day 1 of billing cycle",
+            "Confirm upgrade",
+            "Check the charged amount"
+          ],
+          "expected_result": "Prorated charge approximately equals full price difference (new_plan_price - old_plan_price), since days_remaining_in_cycle is nearly equal to total_days_in_cycle",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Upgrade with fewer than 24 hours remaining in billing cycle calculates minimal proration",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on Starter plan",
+            "Current billing cycle has less than 24 hours remaining (days_remaining_in_cycle is a very small fraction, e.g. 0.5)"
+          ],
+          "steps": [
+            "Initiate upgrade to Pro plan with less than 1 day remaining in cycle",
+            "Confirm upgrade",
+            "Check the charged amount"
+          ],
+          "expected_result": "System correctly calculates a small but non-error prorated_charge using the fractional days_remaining_in_cycle value without failure or rounding errors",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Upgrade attempted with zero days remaining in billing cycle",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on Starter plan",
+            "Current billing cycle has exactly 0 days remaining (last moment of cycle)"
+          ],
+          "steps": [
+            "Initiate upgrade to Pro plan with days_remaining_in_cycle = 0",
+            "Confirm upgrade",
+            "Check the charged amount and resulting plan state"
+          ],
+          "expected_result": "Prorated charge is calculated as zero (or minimal) without division/calculation errors; new plan still takes effect immediately",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Grandfathered-pricing customer sees irreversibility warning before upgrading",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on a grandfathered pricing plan",
+            "Customer initiates an upgrade action"
+          ],
+          "steps": [
+            "Navigate to plan settings as a grandfathered-pricing customer",
+            "Select an upgrade to a standard-priced plan",
+            "Observe any warning messages presented before confirmation"
+          ],
+          "expected_result": "System displays an explicit irreversibility warning informing the customer that upgrading will forfeit their grandfathered pricing permanently, requiring explicit confirmation before proceeding",
+          "source_section": "8. Acceptance criteria"
+        },
+        {
+          "title": "Plan catalog misconfiguration: 'upgrade' target is actually cheaper than current plan",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on a plan labeled 'Pro'",
+            "Catalog is misconfigured so the plan labeled as an upgrade tier has a lower price than current plan"
+          ],
+          "steps": [
+            "Initiate what the UI labels as an 'upgrade' to the misconfigured cheaper plan",
+            "Confirm the change",
+            "Observe how the system processes the plan change"
+          ],
+          "expected_result": "System compares prices, determines this is actually a downgrade by price, and applies downgrade flow (deferred effect, no credit) rather than immediate-effect upgrade logic",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Concurrent plan-change request while a previous request is still processing",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on Starter plan",
+            "A previous plan-change request (e.g. upgrade to Pro) is currently in progress/pending"
+          ],
+          "steps": [
+            "Initiate a second plan-change request (e.g. upgrade to Business) before the first request completes",
+            "Observe system behavior"
+          ],
+          "expected_result": "System prevents or queues the second plan-change request until the first completes, avoiding partial or conflicting plan states",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Failed payment during upgrade leaves customer on original plan",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on Starter plan",
+            "Customer's payment method will be declined (e.g. test card configured to decline)"
+          ],
+          "steps": [
+            "Initiate upgrade from Starter to Pro",
+            "Confirm upgrade, triggering prorated charge attempt",
+            "Payment processor declines the charge",
+            "Observe resulting plan state and UI messaging"
+          ],
+          "expected_result": "Plan change does not take effect; customer remains on Starter plan with no partial state change; inline error is shown with decline reason (if provided) and a link to update payment method",
+          "source_section": "FR6: Payment failure during upgrade"
+        },
+        {
+          "title": "Failed payment during upgrade with no decline reason provided by processor",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on Pro plan",
+            "Payment processor will fail the charge without providing a specific decline reason"
+          ],
+          "steps": [
+            "Initiate upgrade from Pro to Business",
+            "Confirm upgrade, triggering prorated charge attempt",
+            "Payment processor fails the transaction without a decline reason",
+            "Observe resulting plan state and UI messaging"
+          ],
+          "expected_result": "Plan change does not take effect; customer remains on original plan; inline error is shown (generic failure messaging since no decline reason available) with link to update payment method",
+          "source_section": "FR6: Payment failure during upgrade"
+        },
+        {
+          "title": "Attempt to upgrade with no payment method on file",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on Starter plan",
+            "No valid payment method is on file for the customer"
+          ],
+          "steps": [
+            "Initiate upgrade from Starter to Pro",
+            "Attempt to confirm the upgrade"
+          ],
+          "expected_result": "Prorated charge attempt fails due to missing payment method; plan change does not take effect; customer remains on original plan with inline error directing them to add a payment method",
+          "source_section": "FR6: Payment failure during upgrade"
+        },
+        {
+          "title": "Upgrade log entry is created and visible in Billing history even for immediate-effect change",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer is on Starter plan with valid payment method"
+          ],
+          "steps": [
+            "Perform a successful upgrade from Starter to Pro",
+            "Navigate to Billing history section"
+          ],
+          "expected_result": "A log entry for the plan change (upgrade) is present in Billing history, including relevant details per NFR4 logging requirements",
+          "source_section": "8. Acceptance criteria"
+        },
+        {
+          "title": "Failed upgrade payment does not create an erroneous plan-change log entry indicating success",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on Starter plan",
+            "Payment method will be declined"
+          ],
+          "steps": [
+            "Initiate upgrade from Starter to Pro",
+            "Payment fails during proration charge",
+            "Navigate to Billing history"
+          ],
+          "expected_result": "Billing history reflects the failed upgrade attempt (or no successful plan-change entry) without indicating the customer moved to Pro plan; customer's plan remains Starter",
+          "source_section": "FR6: Payment failure during upgrade"
+        },
+        {
+          "title": "Upgrade from Business (highest tier) attempted where no higher plan exists",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on Business plan, the highest available tier",
+            "No higher-priced plan exists in the catalog"
+          ],
+          "steps": [
+            "Navigate to plan settings",
+            "Attempt to find or select an upgrade option beyond Business"
+          ],
+          "expected_result": "System does not present a further upgrade option; no erroneous upgrade action is possible since no higher-priced plan is available",
+          "source_section": "7. Edge cases to handle"
+        }
+      ]
+    },
+    {
+      "feature_name": "Downgrade flow",
+      "feature_query": "How does the downgrade flow work, including deferred effect and no credit?",
+      "retrieved_sections": [
+        "FR4: Downgrade flow (deferred effect)",
+        "8. Acceptance criteria",
+        "FR6: Payment failure during upgrade",
+        "7. Edge cases to handle",
+        "1. Background & problem statement"
+      ],
+      "test_cases": [
+        {
+          "title": "Standard downgrade from Pro to Starter defers to next billing cycle",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer is self-serve and on Pro plan",
+            "Customer is mid-way through current billing cycle"
+          ],
+          "steps": [
+            "Log in as the customer",
+            "Navigate to plan management page",
+            "Select downgrade to Starter plan",
+            "Confirm the downgrade action"
+          ],
+          "expected_result": "Customer retains Pro-level access until the end of the current billing cycle; Starter plan is scheduled to begin at the next billing date; no credit is issued.",
+          "source_section": "FR4: Downgrade flow (deferred effect)"
+        },
+        {
+          "title": "Downgrade confirmation clearly communicates no credit and deferred timing",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer is self-serve and on Business plan"
+          ],
+          "steps": [
+            "Navigate to plan management page",
+            "Select downgrade to Pro plan",
+            "View confirmation dialog before finalizing"
+          ],
+          "expected_result": "Confirmation dialog states current plan access continues until end of billing cycle, new plan starts next cycle, and no credit will be issued.",
+          "source_section": "FR4: Downgrade flow (deferred effect)"
+        },
+        {
+          "title": "Downgrade at exact end of billing cycle takes effect on schedule",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on Pro plan",
+            "Current date is the last day of the billing cycle"
+          ],
+          "steps": [
+            "Initiate downgrade from Pro to Starter",
+            "Wait for billing cycle rollover to occur",
+            "Check plan status after rollover"
+          ],
+          "expected_result": "Downgrade takes effect exactly at the next billing date; Starter plan access begins with no credit issued for the prior cycle.",
+          "source_section": "FR4: Downgrade flow (deferred effect)"
+        },
+        {
+          "title": "Customer upgrades again before a pending downgrade takes effect - downgrade is cancelled, not stacked",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on Pro plan",
+            "Customer has already scheduled a downgrade to Starter effective next billing cycle"
+          ],
+          "steps": [
+            "Navigate to plan management page",
+            "Select upgrade to Business plan before the pending downgrade takes effect",
+            "Confirm the upgrade",
+            "Check billing history and plan status"
+          ],
+          "expected_result": "The pending downgrade to Starter is cancelled entirely (not stacked or queued); the upgrade to Business applies immediately with correct proration.",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Downgrade then downgrade again before cycle end replaces the earlier pending downgrade",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on Business plan",
+            "Customer has a pending downgrade to Pro scheduled for next cycle"
+          ],
+          "steps": [
+            "Navigate to plan management page",
+            "Select downgrade to Starter instead",
+            "Confirm the new downgrade selection",
+            "Check pending plan change status"
+          ],
+          "expected_result": "Only one pending downgrade exists at a time; the pending change is updated to Starter (replacing Pro) with no credit issued, effective next billing cycle.",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Downgrade logged and visible in Billing history",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer is on Pro plan"
+          ],
+          "steps": [
+            "Initiate downgrade to Starter",
+            "Confirm the downgrade",
+            "Navigate to Billing history page"
+          ],
+          "expected_result": "Billing history shows an entry recording the downgrade request, effective date, and confirmation of no credit issued.",
+          "source_section": "8. Acceptance criteria"
+        },
+        {
+          "title": "Grandfathered-pricing customer sees irreversibility warning before downgrading",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on a grandfathered legacy pricing plan"
+          ],
+          "steps": [
+            "Navigate to plan management page",
+            "Select downgrade to a standard lower-tier plan",
+            "Review warning message shown before confirmation"
+          ],
+          "expected_result": "System displays an explicit warning that leaving grandfathered pricing is irreversible before allowing the customer to confirm the downgrade.",
+          "source_section": "8. Acceptance criteria"
+        },
+        {
+          "title": "Downgrade with active coupon/discount does not trigger credit or incorrect proration",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on Pro plan with an active discount code applied"
+          ],
+          "steps": [
+            "Navigate to plan management page",
+            "Select downgrade to Starter plan",
+            "Confirm the downgrade",
+            "Check billing history and account balance"
+          ],
+          "expected_result": "No credit or proration calculation is applied for the downgrade regardless of active discount; discount continues to apply to remaining current-cycle access as expected until cycle end.",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Attempt to downgrade while account currency differs from plan pricing currency",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer's account currency is not USD",
+            "Target lower-tier plan is only priced in USD (promotional plan)"
+          ],
+          "steps": [
+            "Navigate to plan management page",
+            "Attempt to select downgrade to the USD-only promotional plan",
+            "Observe system response"
+          ],
+          "expected_result": "System handles currency mismatch appropriately (e.g., blocks selection or converts/display clarifies pricing) without allowing an inconsistent or broken billing state.",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Non-self-serve customer cannot access downgrade flow without support",
+          "category": "negative",
+          "preconditions": [
+            "Customer account is flagged as non-self-serve / enterprise-managed"
+          ],
+          "steps": [
+            "Log in as the customer",
+            "Navigate to plan management page",
+            "Attempt to initiate a downgrade"
+          ],
+          "expected_result": "System prevents self-serve downgrade and directs the customer to contact support, consistent with acceptance criteria scope limited to self-serve customers on Starter, Pro, and Business.",
+          "source_section": "8. Acceptance criteria"
+        },
+        {
+          "title": "Downgrade request fails to cancel a pending upgrade improperly (no invalid stacked state)",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on Starter plan",
+            "Customer has just initiated an upgrade to Pro that is still processing"
+          ],
+          "steps": [
+            "While upgrade to Pro is processing, attempt to initiate a downgrade back to Starter",
+            "Observe system behavior"
+          ],
+          "expected_result": "System prevents an invalid stacked/conflicting state; either blocks the downgrade until upgrade resolves or clearly cancels/replaces the pending change consistently, with no partial or corrupted plan state.",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Downgrade does not issue credit even when customer requests one via support-style workaround",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on Business plan",
+            "Customer submits downgrade and separately attempts to request a credit for unused time"
+          ],
+          "steps": [
+            "Initiate downgrade to Starter",
+            "Confirm downgrade",
+            "Check account balance and billing history for any credit issuance"
+          ],
+          "expected_result": "No credit is issued under any circumstance for the downgrade, per policy preventing gaming of downgrade/upgrade cycles.",
+          "source_section": "FR4: Downgrade flow (deferred effect)"
+        },
+        {
+          "title": "Downgrade scheduling fails gracefully on backend error, leaving customer on current plan",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on Pro plan",
+            "Billing system is simulated to return an error when scheduling the deferred downgrade"
+          ],
+          "steps": [
+            "Initiate downgrade to Starter",
+            "Confirm the downgrade while backend scheduling error is simulated",
+            "Observe system response and plan status"
+          ],
+          "expected_result": "Customer remains fully on Pro plan with no partial state change; an error message is shown indicating the downgrade could not be scheduled, and no downgrade entry appears in Billing history as completed.",
+          "source_section": "FR6: Payment failure during upgrade"
+        }
+      ]
+    },
+    {
+      "feature_name": "Billing cycle changes",
+      "feature_query": "How does switching between monthly and annual billing work?",
+      "retrieved_sections": [
+        "FR5: Billing cycle change (monthly <-> annual)",
+        "FR3: Upgrade flow (immediate effect)",
+        "FR2: Plan comparison view",
+        "1. Background & problem statement",
+        "1. Background & problem statement"
+      ],
+      "test_cases": [
+        {
+          "title": "Switch from monthly to annual billing successfully",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer is on an active monthly billing plan",
+            "Customer is mid-way through their current monthly cycle"
+          ],
+          "steps": [
+            "Log in as the customer",
+            "Click 'Change plan' to open the plan comparison modal",
+            "Select the annual billing option for the current plan",
+            "Confirm the billing cycle switch"
+          ],
+          "expected_result": "Customer is immediately charged the annual rate, prorated by crediting the unused portion of the current monthly cycle against the annual charge. Billing cycle is updated to annual.",
+          "source_section": "FR5: Billing cycle change (monthly <-> annual)"
+        },
+        {
+          "title": "Attempt to switch from annual to monthly mid-cycle",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer is on an active annual billing plan",
+            "Customer is mid-cycle (not at renewal date)"
+          ],
+          "steps": [
+            "Log in as the customer",
+            "Click 'Change plan' to open the plan comparison modal",
+            "Attempt to select monthly billing option"
+          ],
+          "expected_result": "System prevents the switch and informs the customer they must wait until their annual renewal date to switch to monthly billing.",
+          "source_section": "FR5: Billing cycle change (monthly <-> annual)"
+        },
+        {
+          "title": "Switch from annual to monthly at renewal date",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer is on an active annual billing plan",
+            "Customer's annual renewal date is today, before the renewal charge has fired"
+          ],
+          "steps": [
+            "Log in as the customer on their renewal date",
+            "Click 'Change plan' to open the plan comparison modal",
+            "Select monthly billing option",
+            "Confirm the billing cycle switch"
+          ],
+          "expected_result": "Customer is switched to monthly billing and the renewal charge reflects the monthly rate instead of the annual rate.",
+          "source_section": "FR5: Billing cycle change (monthly <-> annual)"
+        },
+        {
+          "title": "View monthly and annual pricing in plan comparison modal",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer has an active subscription"
+          ],
+          "steps": [
+            "Log in as the customer",
+            "Click 'Change plan' to open the plan comparison modal"
+          ],
+          "expected_result": "Modal displays all available plans side by side, current plan highlighted, each showing both monthly and annual pricing along with a feature comparison table.",
+          "source_section": "FR2: Plan comparison view"
+        },
+        {
+          "title": "Switch to annual billing on the last day of the monthly cycle",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on an active monthly billing plan",
+            "Customer is on the final day of their current monthly cycle (0-1 days remaining)"
+          ],
+          "steps": [
+            "Log in as the customer",
+            "Click 'Change plan' to open the plan comparison modal",
+            "Select annual billing option",
+            "Confirm the switch"
+          ],
+          "expected_result": "Annual rate is charged immediately with a minimal or near-zero proration credit reflecting the negligible unused portion of the monthly cycle.",
+          "source_section": "FR5: Billing cycle change (monthly <-> annual)"
+        },
+        {
+          "title": "Switch to annual billing on the first day of the monthly cycle",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on an active monthly billing plan",
+            "Customer just started a new monthly cycle (full days remaining)"
+          ],
+          "steps": [
+            "Log in as the customer",
+            "Click 'Change plan' to open the plan comparison modal",
+            "Select annual billing option",
+            "Confirm the switch"
+          ],
+          "expected_result": "Annual rate is charged immediately with the maximum possible proration credit applied, reflecting nearly the full unused monthly cycle.",
+          "source_section": "FR5: Billing cycle change (monthly <-> annual)"
+        },
+        {
+          "title": "Attempt annual-to-monthly switch exactly at renewal charge firing time",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on annual billing",
+            "Customer's renewal charge is in the process of firing (race condition scenario)"
+          ],
+          "steps": [
+            "Log in as the customer at the exact moment renewal processing begins",
+            "Click 'Change plan' and attempt to select monthly billing"
+          ],
+          "expected_result": "System either allows the switch only if it strictly precedes the renewal charge, or blocks the switch and applies the annual renewal charge as normal; no double-charging or inconsistent state occurs.",
+          "source_section": "FR5: Billing cycle change (monthly <-> annual)"
+        },
+        {
+          "title": "Switch from monthly to annual combined with a plan upgrade",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on monthly billing for the Starter plan",
+            "Customer is mid-cycle"
+          ],
+          "steps": [
+            "Log in as the customer",
+            "Click 'Change plan' to open the plan comparison modal",
+            "Select the Pro plan with annual billing",
+            "Confirm the change"
+          ],
+          "expected_result": "Customer is charged the Pro annual rate immediately, with proration crediting the unused portion of the current monthly cycle against the new annual charge.",
+          "source_section": "FR5: Billing cycle change (monthly <-> annual)"
+        },
+        {
+          "title": "Switch to annual billing when unused monthly credit exceeds annual charge",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on a high-priced monthly plan just billed at the start of the cycle",
+            "Annual plan price is low relative to the unused monthly credit"
+          ],
+          "steps": [
+            "Log in as the customer",
+            "Click 'Change plan' to open the plan comparison modal",
+            "Select annual billing option",
+            "Confirm the switch"
+          ],
+          "expected_result": "System correctly calculates and applies the proration credit; if credit exceeds the annual charge, the resulting charge is handled per proration rule (e.g., charge floored at zero or remaining credit applied/documented) without resulting in a negative charge to the customer.",
+          "source_section": "FR5: Billing cycle change (monthly <-> annual)"
+        },
+        {
+          "title": "Reject monthly-to-annual switch for customer with no active subscription",
+          "category": "negative",
+          "preconditions": [
+            "Customer account exists but has no active subscription (e.g., canceled or expired)"
+          ],
+          "steps": [
+            "Log in as the customer",
+            "Attempt to open the plan comparison modal via 'Change plan'",
+            "Attempt to select annual billing"
+          ],
+          "expected_result": "System prevents the billing cycle change and displays an appropriate error indicating there is no active subscription to modify.",
+          "source_section": "FR5: Billing cycle change (monthly <-> annual)"
+        },
+        {
+          "title": "Reject direct annual-to-monthly switch attempt via API bypassing UI restriction",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on active annual billing",
+            "Customer is mid-cycle",
+            "Customer attempts to call the billing change endpoint directly instead of using the UI"
+          ],
+          "steps": [
+            "Authenticate as the customer",
+            "Send a direct API request to switch billing cycle from annual to monthly mid-cycle"
+          ],
+          "expected_result": "API rejects the request with an error indicating the switch is not allowed until the annual renewal date, consistent with UI behavior.",
+          "source_section": "FR5: Billing cycle change (monthly <-> annual)"
+        },
+        {
+          "title": "Handle payment failure during monthly-to-annual proration charge",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on monthly billing, mid-cycle",
+            "Customer's payment method on file is invalid or has insufficient funds"
+          ],
+          "steps": [
+            "Log in as the customer",
+            "Click 'Change plan' and select annual billing",
+            "Confirm the switch",
+            "Payment processor declines the prorated annual charge"
+          ],
+          "expected_result": "Billing cycle switch is not completed; customer remains on monthly billing; system displays a payment failure error and prompts to update payment method.",
+          "source_section": "FR5: Billing cycle change (monthly <-> annual)"
+        },
+        {
+          "title": "Duplicate/rapid double-submission of billing cycle switch request",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on active monthly billing",
+            "Customer initiates the switch to annual billing"
+          ],
+          "steps": [
+            "Log in as the customer",
+            "Click 'Change plan', select annual billing, and click confirm multiple times rapidly before the first request completes"
+          ],
+          "expected_result": "Only one billing cycle switch and one prorated annual charge is processed; duplicate submissions are ignored or blocked, preventing double charging.",
+          "source_section": "FR5: Billing cycle change (monthly <-> annual)"
+        }
+      ]
+    },
+    {
+      "feature_name": "Payment failures",
+      "feature_query": "What happens when a payment fails during a plan change?",
+      "retrieved_sections": [
+        "FR6: Payment failure during upgrade",
+        "NFR2: Consistency with payment processor",
+        "7. Edge cases to handle",
+        "FR7: Confirmation & receipts",
+        "FR4: Downgrade flow (deferred effect)"
+      ],
+      "test_cases": [
+        {
+          "title": "Successful upgrade with valid prorated charge",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer is on an active Starter plan",
+            "Customer has a valid, working payment method on file"
+          ],
+          "steps": [
+            "Customer navigates to plan change screen",
+            "Customer selects Pro plan (upgrade)",
+            "Customer confirms the upgrade and the prorated charge amount",
+            "System attempts to charge the prorated amount via Stripe"
+          ],
+          "expected_result": "Payment succeeds, plan change takes effect immediately, database and Stripe subscription are updated consistently, confirmation email is sent with new plan, effective date, and prorated amount charged, and confirmation screen is shown in-app.",
+          "source_section": "FR7: Confirmation & receipts"
+        },
+        {
+          "title": "Card declined during upgrade charge",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on an active Starter plan",
+            "Customer's card will be declined by the payment processor"
+          ],
+          "steps": [
+            "Customer navigates to plan change screen",
+            "Customer selects Pro plan (upgrade)",
+            "Customer confirms the upgrade",
+            "System attempts to charge the prorated amount via Stripe",
+            "Stripe declines the charge due to insufficient funds"
+          ],
+          "expected_result": "Plan change does not take effect; customer remains on Starter plan; inline error is displayed showing the decline reason returned by the payment processor along with a link to update payment method.",
+          "source_section": "FR6: Payment failure during upgrade"
+        },
+        {
+          "title": "Card declined with no reason provided by processor",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on an active Starter plan",
+            "Customer's card will be declined without a specific decline reason from the processor"
+          ],
+          "steps": [
+            "Customer navigates to plan change screen",
+            "Customer selects Pro plan (upgrade)",
+            "Customer confirms the upgrade",
+            "System attempts to charge the prorated amount via Stripe",
+            "Stripe declines the charge without returning a specific reason code"
+          ],
+          "expected_result": "Plan change does not take effect; customer remains on Starter plan; inline error is shown (generic decline message since no reason provided) with a link to update payment method.",
+          "source_section": "FR6: Payment failure during upgrade"
+        },
+        {
+          "title": "Stripe charge succeeds but database write fails",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on an active Starter plan",
+            "Customer has a valid payment method",
+            "Simulate a database write failure after successful Stripe API call"
+          ],
+          "steps": [
+            "Customer initiates upgrade to Pro plan",
+            "Stripe successfully processes the prorated charge",
+            "Application database write for the plan change fails",
+            "Webhook retry mechanism is triggered"
+          ],
+          "expected_result": "System reconciles the inconsistency via webhook retry so the database eventually reflects the successful Stripe charge and plan change; customer is not left in an inconsistent state (e.g. charged but still on old plan indefinitely).",
+          "source_section": "NFR2: Consistency with payment processor"
+        },
+        {
+          "title": "Plan change attempted while previous change still processing",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on an active plan",
+            "A previous plan-change request for this account is still processing"
+          ],
+          "steps": [
+            "Customer submits a new plan-change request while the prior request has not yet completed",
+            "System detects the in-flight request for the same account"
+          ],
+          "expected_result": "System prevents the race condition from corrupting state \u2014 either rejects/queues the second request until the first resolves, or handles it gracefully without creating duplicate or conflicting plan changes.",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Upgrade with $0.00 prorated charge on last day of cycle",
+          "category": "edge_case",
+          "preconditions": [
+            "Customer is on an active plan",
+            "Customer attempts an upgrade on the last day of the billing cycle where the prorated charge computes to $0.00 due to rounding"
+          ],
+          "steps": [
+            "Customer navigates to plan change screen on the last day of the billing cycle",
+            "Customer selects a new plan resulting in $0.00 prorated charge",
+            "Customer confirms the plan change",
+            "System processes the $0.00 charge (or bypasses actual payment processor call)"
+          ],
+          "expected_result": "Plan change is treated as valid and takes effect; no payment failure occurs since there is no actual charge; confirmation email is sent and confirmation screen shown reflecting $0.00 charged.",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Downgrade does not trigger a payment charge or failure",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer is on an active Pro plan",
+            "Customer wants to downgrade to Starter plan"
+          ],
+          "steps": [
+            "Customer navigates to plan change screen",
+            "Customer selects Starter plan (downgrade)",
+            "Customer confirms the downgrade"
+          ],
+          "expected_result": "No prorated charge is attempted since downgrades take effect at the next billing cycle with no credit issued; customer retains Pro access until end of current cycle; no payment failure scenario applies.",
+          "source_section": "FR4: Downgrade flow (deferred effect)"
+        },
+        {
+          "title": "Retry upgrade after updating payment method following a decline",
+          "category": "happy_path",
+          "preconditions": [
+            "Customer previously attempted an upgrade that failed due to a declined card",
+            "Customer remains on their original plan after the failure"
+          ],
+          "steps": [
+            "Customer clicks the link to update payment method shown in the inline error",
+            "Customer enters valid payment details and saves them",
+            "Customer retries the plan upgrade",
+            "System attempts the prorated charge again via Stripe"
+          ],
+          "expected_result": "Charge succeeds with the updated payment method, plan change takes effect, database and Stripe are updated consistently, and confirmation email/screen are shown.",
+          "source_section": "FR6: Payment failure during upgrade"
+        },
+        {
+          "title": "Currency mismatch between account currency and promotional pricing",
+          "category": "negative",
+          "preconditions": [
+            "Customer's account currency differs from the currency of an applicable promotional price",
+            "Customer attempts to upgrade using the promotional offer"
+          ],
+          "steps": [
+            "Customer navigates to plan change screen",
+            "Customer selects a plan with a promotional price in a different currency than their account currency",
+            "Customer confirms the upgrade",
+            "System attempts to process the charge"
+          ],
+          "expected_result": "System handles the currency mismatch appropriately without corrupting billing state (exact resolution not specified in PRD); at minimum, plan change should not silently succeed with incorrect currency charged, and any failure should show an inline error with available decline reason and link to update payment method.",
+          "source_section": "7. Edge cases to handle"
+        },
+        {
+          "title": "Insufficient funds decline preserves original plan entitlements",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on an active Starter plan",
+            "Customer's card has insufficient funds for the upgrade charge"
+          ],
+          "steps": [
+            "Customer initiates upgrade to Pro plan",
+            "System attempts prorated charge",
+            "Charge fails due to insufficient funds"
+          ],
+          "expected_result": "Customer's original Starter plan access and entitlements remain unchanged; no partial upgrade or feature access granted; inline error with decline reason and link to update payment method is displayed.",
+          "source_section": "FR6: Payment failure during upgrade"
+        },
+        {
+          "title": "No confirmation email sent when payment fails",
+          "category": "negative",
+          "preconditions": [
+            "Customer is on an active Starter plan",
+            "Customer's card will be declined"
+          ],
+          "steps": [
+            "Customer initiates upgrade to Pro plan",
+            "System attempts prorated charge which fails",
+            "Observe email notifications sent to customer"
+          ],
+          "expected_result": "No plan-change confirmation email is sent since the plan change did not succeed; only the inline error is shown in-app.",
+          "source_section": "FR7: Confirmation & receipts"
+        }
+      ]
+    }
+  ]
+}

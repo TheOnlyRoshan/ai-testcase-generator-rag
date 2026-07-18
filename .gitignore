@@ -23,4 +23,8 @@ venv/
 # HuggingFace cache
 .cache/
 
+# Output folder
+
+
+# ChromaDb
 chroma_db/

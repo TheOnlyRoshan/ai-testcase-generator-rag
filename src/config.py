@@ -41,17 +41,45 @@ class IndexConfig:
     collection_name: str
 
 @dataclass
+class FeatureQuery:
+    name: str
+    query: str
+
+@dataclass
+class GenerationConfig:
+    n_results: int
+    output_dir: Path
+    json_subdir: str
+    csv_subdir: str
+    filename_timestamp_format: str
+    features: list[FeatureQuery]
+
+@dataclass
+class ExportConfig:
+    target_json_file: str  # empty string means "use the most recently generated file"
+
+@dataclass
+class EvaluationConfig:
+    golden_set_path: Path
+    n_results: int
+
+@dataclass
 class Config:
     paths: PathsConfig
     chunking: ChunkingConfig
     embedding: EmbeddingConfig
     index: IndexConfig
+    generation: GenerationConfig
+    export: ExportConfig
+    evaluation: EvaluationConfig
 
 def load_config(path: str | Path | None = None) -> Config:
     config_path = Path(path) if path else DEFAULT_CONFIG_PATH
     raw = yaml.safe_load(config_path.read_text())
+    features = [FeatureQuery(**f) for f in raw["generation"]["features"]]
 
     return Config(
+        export=ExportConfig(target_json_file=raw.get("export", {}).get("target_json_file", "")),
         paths=PathsConfig(
             raw_docs_dir=PROJECT_ROOT / raw["paths"]["raw_docs_dir"],
             chroma_dir=PROJECT_ROOT / raw["paths"]["chroma_dir"],
@@ -59,4 +87,16 @@ def load_config(path: str | Path | None = None) -> Config:
         chunking=ChunkingConfig(**raw["chunking"]),
         embedding=EmbeddingConfig(**raw["embedding"]),
         index=IndexConfig(**raw["index"]),
+        generation=GenerationConfig(
+            n_results=raw["generation"]["n_results"],
+            output_dir=PROJECT_ROOT / raw["generation"]["output_dir"],
+            json_subdir=raw["generation"]["json_subdir"],
+            csv_subdir=raw["generation"]["csv_subdir"],
+            filename_timestamp_format=raw["generation"]["filename_timestamp_format"],
+            features=features,
+        ),
+        evaluation=EvaluationConfig(
+            golden_set_path=PROJECT_ROOT / raw["evaluation"]["golden_set_path"],
+            n_results=raw["evaluation"]["n_results"],
+        ),
     )

@@ -6,7 +6,7 @@ to generate structured test cases grounded only in that retrieved context.
 
 from __future__ import annotations
 
-import json
+from zoneinfo import ZoneInfo
 
 from anthropic import Anthropic
 from dotenv import load_dotenv
@@ -74,6 +74,7 @@ def generate_test_cases(feature_query: str, context_chunks: list[dict], model_na
     response = client.messages.create(
         model=model_name,
         max_tokens=4096,
+        thinking={"type": "disabled"}, # structured JSON output doesn't need reasoning tokens
         messages=[{"role": "user", "content": prompt}],
     )
 
@@ -83,23 +84,40 @@ def generate_test_cases(feature_query: str, context_chunks: list[dict], model_na
 
 
 if __name__ == "__main__":
+    import json
+    from datetime import datetime, timezone
+
     cfg = load_config()
     embed_model = load_embedding_model(cfg.embedding.model_name)
 
-    feature_query = "How does proration work when a customer upgrades or downgrades their plan?"
-    context_chunks = retrieve_context(feature_query, cfg, embed_model, n_results=5)
+    all_results = []
+    for feature in cfg.generation.features:
+        print(f"Generating for: {feature.name}")
+        context_chunks = retrieve_context(feature.query, cfg, embed_model, n_results=cfg.generation.n_results)
+        result = generate_test_cases(feature.query, context_chunks, model_name="claude-sonnet-5")
 
-    print(f"Retrieved {len(context_chunks)} chunks for grounding:\n")
-    for c in context_chunks:
-        print(f" - {c['section']} (distance={c['distance']:.4f})")
+        all_results.append({
+            "feature_name": feature.name,
+            "feature_query": feature.query,
+            "retrieved_sections": [c["section"] for c in context_chunks],
+            "test_cases": [tc.model_dump() for tc in result.test_cases],
+        })
+        print(f"  -> {len(result.test_cases)} test cases generated\n")
 
-    print("\nGenerating test cases...\n")
-    result = generate_test_cases(feature_query, context_chunks)
+    output = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "embedding_model": cfg.embedding.model_name,
+        "prompt_version": PROMPT_VERSION,
+        "features": all_results,
+    }
 
-    print(f"Feature: {result.feature}\n")
-    for i, tc in enumerate(result.test_cases, 1):
-        print(f"{i}. [{tc.category.value}] {tc.title}")
-        print(f"   Preconditions: {tc.preconditions}")
-        print(f"   Steps: {tc.steps}")
-        print(f"   Expected: {tc.expected_result}")
-        print(f"   Source: {tc.source_section}\n")
+    cfg.generation.output_dir.mkdir(parents=True, exist_ok=True)
+    ist_now = datetime.now(ZoneInfo("Asia/Kolkata"))
+    filename = f"test_cases_{ist_now.strftime(cfg.generation.filename_timestamp_format)}.json"
+
+    json_dir = cfg.generation.output_dir / cfg.generation.json_subdir
+    json_dir.mkdir(parents=True, exist_ok=True)
+    out_path = json_dir / filename
+    out_path.write_text(json.dumps(output, indent=2))
+
+    print(f"Wrote {sum(len(f['test_cases']) for f in all_results)} total test cases to {out_path}")
