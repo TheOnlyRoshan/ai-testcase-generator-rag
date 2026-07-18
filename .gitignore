@@ -23,8 +23,10 @@ venv/
 # HuggingFace cache
 .cache/
 
-# Output folder
-
+# Output folder -- fully regenerable by running the pipeline, so ignored
+# by default. A few representative sample files are force-committed
+# (git add -f) as concrete proof of what the pipeline produces; see README.
+/outputs
 
 # ChromaDb
 chroma_db/

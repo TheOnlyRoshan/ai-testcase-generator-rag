@@ -4,6 +4,8 @@ Loads pipeline settings from config.yaml so hyperparameters and paths live
 in one place and can be logged alongside any index/output for reproducibility.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,29 +23,30 @@ DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.yaml"
 @dataclass
 class PathsConfig:
     raw_docs_dir: Path
+    chroma_dir: Path
 
-@dataclass
-class EmbeddingConfig:
-    model_name: str
 
 @dataclass
 class ChunkingConfig:
     max_chunk_size: int
     overlap: int
 
+
 @dataclass
-class PathsConfig:
-    raw_docs_dir: Path
-    chroma_dir: Path
+class EmbeddingConfig:
+    model_name: str
+
 
 @dataclass
 class IndexConfig:
     collection_name: str
 
+
 @dataclass
 class FeatureQuery:
     name: str
     query: str
+
 
 @dataclass
 class GenerationConfig:
@@ -54,20 +57,18 @@ class GenerationConfig:
     filename_timestamp_format: str
     features: list[FeatureQuery]
 
+
 @dataclass
 class ExportConfig:
     target_json_file: str  # empty string means "use the most recently generated file"
 
-@dataclass
-class EvaluationConfig:
-    golden_set_path: Path
-    n_results: int
 
 @dataclass
 class EvaluationConfig:
     golden_set_path: Path
     n_results: int
     faithfulness_output_subdir: str
+
 
 @dataclass
 class Config:
@@ -79,13 +80,13 @@ class Config:
     export: ExportConfig
     evaluation: EvaluationConfig
 
+
 def load_config(path: str | Path | None = None) -> Config:
     config_path = Path(path) if path else DEFAULT_CONFIG_PATH
     raw = yaml.safe_load(config_path.read_text())
     features = [FeatureQuery(**f) for f in raw["generation"]["features"]]
 
     return Config(
-        export=ExportConfig(target_json_file=raw.get("export", {}).get("target_json_file", "")),
         paths=PathsConfig(
             raw_docs_dir=PROJECT_ROOT / raw["paths"]["raw_docs_dir"],
             chroma_dir=PROJECT_ROOT / raw["paths"]["chroma_dir"],
@@ -101,6 +102,7 @@ def load_config(path: str | Path | None = None) -> Config:
             filename_timestamp_format=raw["generation"]["filename_timestamp_format"],
             features=features,
         ),
+        export=ExportConfig(target_json_file=raw.get("export", {}).get("target_json_file", "")),
         evaluation=EvaluationConfig(
             golden_set_path=PROJECT_ROOT / raw["evaluation"]["golden_set_path"],
             n_results=raw["evaluation"]["n_results"],

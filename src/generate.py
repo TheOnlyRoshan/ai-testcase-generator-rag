@@ -6,6 +6,8 @@ to generate structured test cases grounded only in that retrieved context.
 
 from __future__ import annotations
 
+import json
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 from anthropic import Anthropic
@@ -84,9 +86,6 @@ def generate_test_cases(feature_query: str, context_chunks: list[dict], model_na
 
 
 if __name__ == "__main__":
-    import json
-    from datetime import datetime, timezone
-
     cfg = load_config()
     embed_model = load_embedding_model(cfg.embedding.model_name)
 
