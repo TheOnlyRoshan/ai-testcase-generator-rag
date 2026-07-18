@@ -31,23 +31,32 @@ class ChunkingConfig:
     max_chunk_size: int
     overlap: int
 
+@dataclass
+class PathsConfig:
+    raw_docs_dir: Path
+    chroma_dir: Path
+
+@dataclass
+class IndexConfig:
+    collection_name: str
 
 @dataclass
 class Config:
     paths: PathsConfig
     chunking: ChunkingConfig
     embedding: EmbeddingConfig
+    index: IndexConfig
 
 def load_config(path: str | Path | None = None) -> Config:
     config_path = Path(path) if path else DEFAULT_CONFIG_PATH
     raw = yaml.safe_load(config_path.read_text())
 
-    # every relative path *inside* config.yaml is resolved against the
-    # project root too, not the caller's cwd, for the same reason as above
-    raw_docs_dir = PROJECT_ROOT / raw["paths"]["raw_docs_dir"]
-
     return Config(
-        paths=PathsConfig(raw_docs_dir=raw_docs_dir),
+        paths=PathsConfig(
+            raw_docs_dir=PROJECT_ROOT / raw["paths"]["raw_docs_dir"],
+            chroma_dir=PROJECT_ROOT / raw["paths"]["chroma_dir"],
+        ),
         chunking=ChunkingConfig(**raw["chunking"]),
         embedding=EmbeddingConfig(**raw["embedding"]),
+        index=IndexConfig(**raw["index"]),
     )

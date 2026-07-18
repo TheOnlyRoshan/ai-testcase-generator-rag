@@ -1,5 +1,6 @@
 paths:
   raw_docs_dir: "data/raw"
+  chroma_dir: "chroma_db"
 
 chunking:
   max_chunk_size: 500
@@ -7,3 +8,6 @@ chunking:
 
 embedding:
   model_name: "all-MiniLM-L6-v2"
+
+index:
+  collection_name: "prd_chunks"
