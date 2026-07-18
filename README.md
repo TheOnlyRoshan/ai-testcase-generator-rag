@@ -1,13 +1,13 @@
 # RAG-based test case generator
 
 Generates QA test cases (happy path, edge case, negative) grounded in product
-docs — PRDs today, Jira tickets as a planned extension — using retrieval-
+docs, PRDs today, Jira tickets as a planned extension using retrieval-
 augmented generation with Claude.
 
 Built end-to-end as a learning project, with a deliberate focus on the parts
 most RAG demos skip: hand-built retrieval evaluation against a labeled golden
 set, LLM-as-judge faithfulness evaluation, and reproducibility (pinned
-embedding model, versioned index, config-driven everything — no hardcoded
+embedding model, versioned index, config-driven everything, no hardcoded
 paths, hyperparameters, or file names anywhere in the codebase).
 
 ## Status
@@ -88,7 +88,7 @@ python eval/evaluate_faithfulness.py  # LLM-judged faithfulness of generated out
 
 All hyperparameters (chunk size/overlap, embedding model, retrieval `k`,
 which features to generate test cases for, output filename format) live in
-`config.yaml` — no code changes needed to adjust any of them.
+`config.yaml`, no code changes needed to adjust any of them.
 
 ## Stack, and why
 
@@ -105,7 +105,7 @@ which features to generate test cases for, output filename format) live in
 Attempted first. Importing `ragas` triggers a broken dependency chain
 (`ragas → langchain_community.chat_models.vertexai`, a module that no longer
 exists in current `langchain_community`, which is itself being sunset).
-Three different fixes were tried — installing `langchain_community`,
+Three different fixes were tried, installing `langchain_community`,
 installing Google's Vertex AI SDK, pinning an older `langchain_community`
 version — each one breaking a different downstream import. This is a real,
 reproducible upstream issue, not a local misconfiguration.
@@ -113,7 +113,7 @@ reproducible upstream issue, not a local misconfiguration.
 Given that, evaluation was hand-built directly on the same Anthropic client
 already used for generation: context precision/recall/MRR (pure set-overlap
 math, no LLM needed) in `eval/evaluate_retrieval.py`, and an LLM-as-judge
-faithfulness check (claim decomposition + per-claim support verification —
+faithfulness check (claim decomposition + per-claim support verification,
 the same methodology `ragas.metrics.Faithfulness` uses internally) in
 `eval/evaluate_faithfulness.py`. Same rigor, zero fragile dependencies, and
 a clearer picture of what each metric actually measures.
@@ -165,7 +165,7 @@ evidence rather than a suspicion.
 
 - Ingests Markdown (`.md`) source documents only. Production RAG pipelines
   typically normalize PDF/DOCX/HTML to Markdown at ingestion time (e.g. via
-  Docling or MarkItDown) before chunking — this project's chunking/retrieval
+  Docling or MarkItDown) before chunking, this project's chunking/retrieval
   logic is already built against that assumption, so adding a conversion
   adapter is a drop-in v2 extension, not a redesign.
 - Jira ticket ingestion is not implemented. Tickets are structured records
